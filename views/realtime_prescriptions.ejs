@@ -8,7 +8,7 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 10px;
+      margin: 20px;
       background-color: #f4f4f4;
       color: #333;
     }
@@ -18,8 +18,8 @@
     }
     .container {
       display: flex;
-      gap: 5px;
-      margin-top: 5px;
+      gap: 10px;
+      margin-top: 10px;
     }
     #leftColumn {
       flex: 1;
@@ -38,7 +38,7 @@
     }
     .prescription-info p {
       margin: 8px 0;
-      font-size: 1rem;
+      font-size: 1.1em;
     }
     .prescription-info strong {
       color: #0056b3;
@@ -46,11 +46,11 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 8px;
+      margin-top: 10px;
     }
     th, td {
       border: 1px solid #ddd;
-      padding: 8px;
+      padding: 10px;
       text-align: left;
     }
     th {
@@ -60,7 +60,7 @@
     .no-data {
       color: #777;
       text-align: center;
-      font-size: 1.1em;
+      font-size: 1.2em;
       padding: 10px;
     }
   </style>
@@ -81,11 +81,50 @@
     </div>
   </div>
 
+  <!-- 引入html2canvas庫 -->
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
     const prescriptionDetailsContainer = document.getElementById('prescriptionDetailsContainer');
     const rightInfoBox = document.getElementById('rightInfoBox');
+    const leftColumn = document.getElementById('leftColumn');
+
+    // 自動將左側區域儲存為PNG的函數
+    function saveLeftColumnAsPNG(prescription) {
+      // 確保有處方資料才進行截圖
+      if (!prescription || Object.keys(prescription).length === 0) {
+        return;
+      }
+
+      // 使用setTimeout確保DOM已完全渲染
+      setTimeout(() => {
+        html2canvas(leftColumn, {
+          backgroundColor: '#fff',
+          scale: 2, // 提高解析度
+          logging: false,
+          useCORS: true
+        }).then(canvas => {
+          // 創建下載連結
+          const link = document.createElement('a');
+          // 使用處方ID和時間戳作為檔名
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+          const patientName = prescription.patientName || prescription.name || 'unknown';
+          const fileName = `處方_${patientName}_${timestamp}.png`;
+          
+          // 將canvas轉換為blob並下載
+          canvas.toBlob(function(blob) {
+            link.href = URL.createObjectURL(blob);
+            link.download = fileName;
+            link.click();
+            // 釋放URL物件
+            setTimeout(() => URL.revokeObjectURL(link.href), 5000);
+          }, 'image/png');
+        }).catch(err => {
+          console.error('截圖過程中發生錯誤:', err);
+        });
+      }, 500); // 等待500毫秒確保DOM已渲染完成
+    }
 
     function renderPrescription(prescription) {
       prescriptionDetailsContainer.innerHTML = '';
@@ -114,7 +153,7 @@
         const thead = document.createElement('thead');        const tbody = document.createElement('tbody');
 
         const headerRow = document.createElement('tr');
-        ['藥品名稱', '健保碼',  '頻率', '數量'].forEach(text => { // Added frequency to header
+        ['藥品名稱', '健保碼',  'frequency', '數量'].forEach(text => { // Added frequency to header
           const th = document.createElement('th');
           th.textContent = text;
           headerRow.appendChild(th);
@@ -146,13 +185,14 @@
 
       // 右側顯示「處方 ID」與「詳情」
       let rightContent = '';
-      if (prescription.plusday && prescription.plusday !== 0) {
-  const plusdayDisplay = `+++${prescription.plusday}天+++`;
-  rightContent += `<p><strong style="color: red;">特殊註記 :</strong> ${plusdayDisplay}</p>`;
-}
+      prescription.plusday = `+++${prescription.plusday}天+++` || '無'; // Default to 0 if not present
+      rightContent += `<p><strong style="color: red;">特殊註記 :</strong> ${prescription.plusday}</p>`; // Added dayCount
       rightContent += `<p><strong>處方 ID:</strong> ${prescription._id || 'N/A'}</p>`;
       if (prescription.details) rightContent += `<p><strong>詳情:</strong> ${prescription.details}</p>`;
       rightInfoBox.innerHTML = rightContent;
+
+      // 在渲染完成後自動儲存為PNG
+      saveLeftColumnAsPNG(prescription);
     }
 
     socket.on('connect', () => {
