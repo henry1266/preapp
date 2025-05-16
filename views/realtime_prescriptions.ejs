@@ -102,10 +102,9 @@
       infoDiv.classList.add('prescription-info');
 
       let content = '';
-      content += `<p><strong>病患姓名:</strong> ${prescription.patientName || prescription.name || 'N/A'}</p>`;
-      content += `<p><strong>日期:</strong> ${prescription.date ? new Date(prescription.date).toLocaleString() : 'N/A'}</p>`;
+      content += `<p><strong>病患姓名:</strong> ${prescription.patientName || prescription.name || 'N/A'}`;
+      content += `<strong>   日期:</strong> ${prescription.date ? new Date(prescription.date).toLocaleString() : 'N/A'}</p>`;
       if (prescription.status) content += `<p><strong>狀態:</strong> ${prescription.status}</p>`;
-      content += `<p><strong>特殊註記 dayCount:</strong> ${prescription.dayCount || 'N/A'}</p>`; // Added dayCount
       infoDiv.innerHTML = content;
       prescriptionDetailsContainer.appendChild(infoDiv);
 
@@ -147,6 +146,8 @@
 
       // 右側顯示「處方 ID」與「詳情」
       let rightContent = '';
+      prescription.dayCount = `+++${prescription.dayCount}天+++` || 0; // Default to 0 if not present
+      rightContent += `<p><strong>特殊註記 dayCount:</strong> ${prescription.dayCount}</p>`; // Added dayCount
       rightContent += `<p><strong>處方 ID:</strong> ${prescription._id || 'N/A'}</p>`;
       if (prescription.details) rightContent += `<p><strong>詳情:</strong> ${prescription.details}</p>`;
       rightInfoBox.innerHTML = rightContent;
