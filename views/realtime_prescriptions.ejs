@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %></title>
-    <link rel="stylesheet" href="/css/dashboard.css">
-<style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/dashboard.css" />
+  <style>
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
@@ -67,109 +67,105 @@
   </style>
 </head>
 <body>
-    <h1><%= title %></h1>
-    <div id="prescriptionDetailsContainer">
-        <!-- Prescription data will be dynamically inserted here -->
+  <h1><%= title %></h1>
+
+  <div class="container">
+    <div id="leftColumn">
+      <div id="prescriptionDetailsContainer">
         <p class="no-data">等待處方資料更新...</p>
+      </div>
     </div>
+    <div id="rightColumn">
+      <p>右側區域保留擴充用途</p>
+    </div>
+  </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
-        const prescriptionDetailsContainer = document.getElementById('prescriptionDetailsContainer');
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const prescriptionDetailsContainer = document.getElementById('prescriptionDetailsContainer');
 
-        // Function to render a single prescription with a table for medications
-        function renderPrescription(prescription) {
-            prescriptionDetailsContainer.innerHTML = ''; // Clear previous content
+    function renderPrescription(prescription) {
+      prescriptionDetailsContainer.innerHTML = ''; // 清空
 
-            if (!prescription || Object.keys(prescription).length === 0) {
-                prescriptionDetailsContainer.innerHTML = '<p class="no-data">等待處方資料更新...</p>';
-                return;
-            }
+      if (!prescription || Object.keys(prescription).length === 0) {
+        prescriptionDetailsContainer.innerHTML = '<p class="no-data">等待處方資料更新...</p>';
+        return;
+      }
 
-            const infoDiv = document.createElement('div');
-            infoDiv.classList.add('prescription-info');
-            
-            let content = `<p><strong>處方ID:</strong> ${prescription._id || 'N/A'}</p>`;
-            content += `<p><strong>病患姓名:</strong> ${prescription.patientName || prescription.name || 'N/A'}</p>`;
-            content += `<p><strong>日期:</strong> ${prescription.date ? new Date(prescription.date).toLocaleString() : 'N/A'}</p>`;
-            if (prescription.details) content += `<p><strong>詳情:</strong> ${prescription.details}</p>`;
-            if (prescription.status) content += `<p><strong>狀態:</strong> ${prescription.status}</p>`;
-            infoDiv.innerHTML = content;
-            prescriptionDetailsContainer.appendChild(infoDiv);
+      const infoDiv = document.createElement('div');
+      infoDiv.classList.add('prescription-info');
 
-            // Create table for medications
-            if (prescription.medications && Array.isArray(prescription.medications) && prescription.medications.length > 0) {
-                const table = document.createElement('table');
-                const thead = document.createElement('thead');
-                const tbody = document.createElement('tbody');
+      let content = `<p><strong>處方ID:</strong> ${prescription._id || 'N/A'}</p>`;
+      content += `<p><strong>病患姓名:</strong> ${prescription.patientName || prescription.name || 'N/A'}</p>`;
+      content += `<p><strong>日期:</strong> ${prescription.date ? new Date(prescription.date).toLocaleString() : 'N/A'}</p>`;
+      if (prescription.details) content += `<p><strong>詳情:</strong> ${prescription.details}</p>`;
+      if (prescription.status) content += `<p><strong>狀態:</strong> ${prescription.status}</p>`;
+      infoDiv.innerHTML = content;
+      prescriptionDetailsContainer.appendChild(infoDiv);
 
-                // Table header
-                const headerRow = document.createElement('tr');
-                ['藥品名稱', '健保碼', '數量', '單價', '藥品總成本'].forEach(text => {
-                    const th = document.createElement('th');
-                    th.textContent = text;
-                    headerRow.appendChild(th);
-                });
-                thead.appendChild(headerRow);
-                table.appendChild(thead);
+      // 藥品表格
+      if (prescription.medications && Array.isArray(prescription.medications) && prescription.medications.length > 0) {
+        const table = document.createElement('table');
+        const thead = document.createElement('thead');
+        const tbody = document.createElement('tbody');
 
-                // Table body
-                prescription.medications.forEach(med => {
-                    const row = document.createElement('tr');
-                    const name = med.dname || 'N/A';
-                    const code = med.dinsuranceCode || 'N/A';
-                    const quantity = med.dcount || 0;
-                    const unitPrice = med.unitPrice || 0; // Expecting this from backend
-                    const totalCost = med.totalCost || (quantity * unitPrice).toFixed(2); // Expecting this or calculate
-                    
-                    [name, code, quantity, unitPrice.toFixed(2), totalCost].forEach(text => {
-                        const td = document.createElement('td');
-                        td.textContent = text;
-                        row.appendChild(td);
-                    });
-                    tbody.appendChild(row);
-                });
-                table.appendChild(tbody);
-                prescriptionDetailsContainer.appendChild(table);
-            } else {
-                const noMedsP = document.createElement('p');
-                noMedsP.textContent = '無藥品資訊。';
-                prescriptionDetailsContainer.appendChild(noMedsP);
-            }
-        }
+        const headerRow = document.createElement('tr');
+        ['藥品名稱', '健保碼', '數量', '單價', '藥品總成本'].forEach(text => {
+          const th = document.createElement('th');
+          th.textContent = text;
+          headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
 
-        socket.on('connect', () => {
-            console.log('Connected to Socket.IO server!');
-            // Request initial data or rely on server to send it upon connection if needed
-            // For now, we just wait for 'prescription_update'
+        prescription.medications.forEach(med => {
+          const row = document.createElement('tr');
+          const name = med.dname || 'N/A';
+          const code = med.dinsuranceCode || 'N/A';
+          const quantity = med.dcount || 0;
+          const unitPrice = med.unitPrice || 0;
+          const totalCost = med.totalCost || (quantity * unitPrice).toFixed(2);
+
+          [name, code, quantity, unitPrice.toFixed(2), totalCost].forEach(text => {
+            const td = document.createElement('td');
+            td.textContent = text;
+            row.appendChild(td);
+          });
+          tbody.appendChild(row);
         });
 
-        // Handle initial prescriptions if server sends them (optional, might just show latest)
-        socket.on('initial_prescriptions', (initialDataArray) => {
-            console.log('Received initial prescriptions:', initialDataArray);
-            if (initialDataArray && initialDataArray.length > 0) {
-                // Display the latest one from the initial set
-                const latestInitial = initialDataArray.sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0))[0];
-                renderPrescription(latestInitial);
-            } else {
-                 prescriptionDetailsContainer.innerHTML = '<p class="no-data">目前無處方資料。</p>';
-            }
-        });
-        
-        // Handle a new or updated prescription
-        socket.on('prescription_update', (newPrescription) => {
-            console.log('Received prescription update:', newPrescription);
-            renderPrescription(newPrescription); // Render only the new/updated prescription
-        });
+        table.appendChild(tbody);
+        prescriptionDetailsContainer.appendChild(table);
+      } else {
+        const noMedsP = document.createElement('p');
+        noMedsP.textContent = '無藥品資訊。';
+        prescriptionDetailsContainer.appendChild(noMedsP);
+      }
+    }
 
-        socket.on('disconnect', () => {
-            console.log('Disconnected from Socket.IO server.');
-        });
+    socket.on('connect', () => {
+      console.log('Connected to Socket.IO server!');
+    });
 
-        // Initial rendering state
-        // renderPrescription(null); // Or fetch initial data
+    socket.on('initial_prescriptions', (initialDataArray) => {
+      console.log('Received initial prescriptions:', initialDataArray);
+      if (initialDataArray && initialDataArray.length > 0) {
+        const latestInitial = initialDataArray.sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0))[0];
+        renderPrescription(latestInitial);
+      } else {
+        prescriptionDetailsContainer.innerHTML = '<p class="no-data">目前無處方資料。</p>';
+      }
+    });
 
-    </script>
+    socket.on('prescription_update', (newPrescription) => {
+      console.log('Received prescription update:', newPrescription);
+      renderPrescription(newPrescription);
+    });
+
+    socket.on('disconnect', () => {
+      console.log('Disconnected from Socket.IO server.');
+    });
+  </script>
 </body>
 </html>
