@@ -7,116 +7,137 @@
     <link rel="stylesheet" href="/css/dashboard.css">
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
-        h1 { color: #0056b3; }
-        #prescriptionsContainer {
+        h1 { color: #0056b3; text-align: center; }
+        #prescriptionDetailsContainer {
             background-color: #fff;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            max-height: 500px; /* Added for better display of many items */
-            overflow-y: auto;  /* Added for scroll */
+            margin-top: 20px;
         }
-        .prescription-item {
-            border-bottom: 1px solid #eee;
-            padding: 10px 0;
+        .prescription-info p { margin: 8px 0; font-size: 1.1em; }
+        .prescription-info strong { color: #0056b3; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
         }
-        .prescription-item:last-child {
-            border-bottom: none;
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
         }
-        .prescription-item p { margin: 5px 0; }
-        .no-data { color: #777; }
+        th {
+            background-color: #e9ecef;
+            color: #495057;
+        }
+        .no-data { color: #777; text-align: center; font-size: 1.2em; padding: 20px; }
     </style>
 </head>
 <body>
     <h1><%= title %></h1>
-    <div id="prescriptionsContainer">
+    <div id="prescriptionDetailsContainer">
         <!-- Prescription data will be dynamically inserted here -->
+        <p class="no-data">等待處方資料更新...</p>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        const prescriptionsContainer = document.getElementById('prescriptionsContainer');
-        
-        let currentPrescriptions = <%- JSON.stringify(initialPrescriptions || []) %>;
+        const prescriptionDetailsContainer = document.getElementById('prescriptionDetailsContainer');
 
-        function formatPrescriptionData(prescription) {
-            let medicationsDisplay = 'N/A';
-            if (prescription.medications) {
-                if (Array.isArray(prescription.medications)) {
-                    medicationsDisplay = prescription.medications.join(', ');
-                } else if (typeof prescription.medications === 'string') {
-                    try {
-                        const parsedMeds = JSON.parse(prescription.medications);
-                        if (Array.isArray(parsedMeds)) {
-                            medicationsDisplay = parsedMeds.join(', ');
-                        } else {
-                            medicationsDisplay = prescription.medications;
-                        }
-                    } catch (e) {
-                        medicationsDisplay = prescription.medications;
-                    }
-                } else {
-                     medicationsDisplay = String(prescription.medications);
-                }
-            }
-            
-            let content = `<p><strong>處方ID:</strong> ${prescription._id || 'N/A'}</p>`;
-            content += `<p><strong>病患姓名:</strong> ${prescription.patientName || prescription.name || 'N/A'}</p>`;
-            content += `<p><strong>藥品:</strong> ${medicationsDisplay}</p>`;
-            content += `<p><strong>日期:</strong> ${prescription.date ? new Date(prescription.date).toLocaleString() : new Date().toLocaleString()}</p>`;
-            if (prescription.details) content += `<p><strong>詳情:</strong> ${prescription.details}</p>`;
-            if (prescription.status) content += `<p><strong>狀態:</strong> ${prescription.status}</p>`;
-            return content;
-        }
+        // Function to render a single prescription with a table for medications
+        function renderPrescription(prescription) {
+            prescriptionDetailsContainer.innerHTML = ''; // Clear previous content
 
-        function renderPrescriptions() {
-            prescriptionsContainer.innerHTML = '';
-            if (currentPrescriptions.length === 0) {
-                prescriptionsContainer.innerHTML = '<p class="no-data">等待處方資料更新...</p>';
+            if (!prescription || Object.keys(prescription).length === 0) {
+                prescriptionDetailsContainer.innerHTML = '<p class="no-data">等待處方資料更新...</p>';
                 return;
             }
 
-            currentPrescriptions.forEach(prescription => {
-                const itemDiv = document.createElement('div');
-                itemDiv.classList.add('prescription-item');
-                itemDiv.innerHTML = formatPrescriptionData(prescription);
-                prescriptionsContainer.appendChild(itemDiv);
-            });
+            const infoDiv = document.createElement('div');
+            infoDiv.classList.add('prescription-info');
+            
+            let content = `<p><strong>處方ID:</strong> ${prescription._id || 'N/A'}</p>`;
+            content += `<p><strong>病患姓名:</strong> ${prescription.patientName || prescription.name || 'N/A'}</p>`;
+            content += `<p><strong>日期:</strong> ${prescription.date ? new Date(prescription.date).toLocaleString() : 'N/A'}</p>`;
+            if (prescription.details) content += `<p><strong>詳情:</strong> ${prescription.details}</p>`;
+            if (prescription.status) content += `<p><strong>狀態:</strong> ${prescription.status}</p>`;
+            infoDiv.innerHTML = content;
+            prescriptionDetailsContainer.appendChild(infoDiv);
+
+            // Create table for medications
+            if (prescription.medications && Array.isArray(prescription.medications) && prescription.medications.length > 0) {
+                const table = document.createElement('table');
+                const thead = document.createElement('thead');
+                const tbody = document.createElement('tbody');
+
+                // Table header
+                const headerRow = document.createElement('tr');
+                ['藥品名稱', '健保碼', '數量', '單價', '藥品總成本'].forEach(text => {
+                    const th = document.createElement('th');
+                    th.textContent = text;
+                    headerRow.appendChild(th);
+                });
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+
+                // Table body
+                prescription.medications.forEach(med => {
+                    const row = document.createElement('tr');
+                    const name = med.dname || 'N/A';
+                    const code = med.dinsuranceCode || 'N/A';
+                    const quantity = med.dcount || 0;
+                    const unitPrice = med.unitPrice || 0; // Expecting this from backend
+                    const totalCost = med.totalCost || (quantity * unitPrice).toFixed(2); // Expecting this or calculate
+                    
+                    [name, code, quantity, unitPrice.toFixed(2), totalCost].forEach(text => {
+                        const td = document.createElement('td');
+                        td.textContent = text;
+                        row.appendChild(td);
+                    });
+                    tbody.appendChild(row);
+                });
+                table.appendChild(tbody);
+                prescriptionDetailsContainer.appendChild(table);
+            } else {
+                const noMedsP = document.createElement('p');
+                noMedsP.textContent = '無藥品資訊。';
+                prescriptionDetailsContainer.appendChild(noMedsP);
+            }
         }
 
         socket.on('connect', () => {
             console.log('Connected to Socket.IO server!');
+            // Request initial data or rely on server to send it upon connection if needed
+            // For now, we just wait for 'prescription_update'
         });
 
-        socket.on('initial_prescriptions', (initialData) => {
-            console.log('Received initial prescriptions:', initialData);
-            currentPrescriptions = initialData.concat(currentPrescriptions);
-            const uniquePrescriptions = [];
-            const ids = new Set();
-            currentPrescriptions.forEach(p => {
-                if (p && p._id && !ids.has(p._id)) {
-                    uniquePrescriptions.push(p);
-                    ids.add(p._id);
-                } else if (!p._id && p) {
-                    uniquePrescriptions.push(p);
-                }
-            });
-            currentPrescriptions = uniquePrescriptions.sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0));
-            renderPrescriptions();
+        // Handle initial prescriptions if server sends them (optional, might just show latest)
+        socket.on('initial_prescriptions', (initialDataArray) => {
+            console.log('Received initial prescriptions:', initialDataArray);
+            if (initialDataArray && initialDataArray.length > 0) {
+                // Display the latest one from the initial set
+                const latestInitial = initialDataArray.sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0))[0];
+                renderPrescription(latestInitial);
+            } else {
+                 prescriptionDetailsContainer.innerHTML = '<p class="no-data">目前無處方資料。</p>';
+            }
         });
         
+        // Handle a new or updated prescription
         socket.on('prescription_update', (newPrescription) => {
             console.log('Received prescription update:', newPrescription);
-            currentPrescriptions.unshift(newPrescription);
-            renderPrescriptions();
+            renderPrescription(newPrescription); // Render only the new/updated prescription
         });
 
         socket.on('disconnect', () => {
             console.log('Disconnected from Socket.IO server.');
         });
 
-        renderPrescriptions();
+        // Initial rendering state
+        // renderPrescription(null); // Or fetch initial data
+
     </script>
 </body>
 </html>
