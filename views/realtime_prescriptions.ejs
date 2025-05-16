@@ -8,7 +8,7 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 20px;
+      margin: 10px;
       background-color: #f4f4f4;
       color: #333;
     }
@@ -18,8 +18,8 @@
     }
     .container {
       display: flex;
-      gap: 10px;
-      margin-top: 10px;
+      gap: 5px;
+      margin-top: 5px;
     }
     #leftColumn {
       flex: 1;
@@ -38,7 +38,7 @@
     }
     .prescription-info p {
       margin: 8px 0;
-      font-size: 1.1em;
+      font-size: 1rem;
     }
     .prescription-info strong {
       color: #0056b3;
@@ -46,11 +46,11 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
+      margin-top: 8px;
     }
     th, td {
       border: 1px solid #ddd;
-      padding: 10px;
+      padding: 8px;
       text-align: left;
     }
     th {
@@ -60,7 +60,7 @@
     .no-data {
       color: #777;
       text-align: center;
-      font-size: 1.2em;
+      font-size: 1.1em;
       padding: 10px;
     }
   </style>
@@ -114,7 +114,7 @@
         const thead = document.createElement('thead');        const tbody = document.createElement('tbody');
 
         const headerRow = document.createElement('tr');
-        ['藥品名稱', '健保碼',  'frequency', '數量'].forEach(text => { // Added frequency to header
+        ['藥品名稱', '健保碼',  '頻率', '數量'].forEach(text => { // Added frequency to header
           const th = document.createElement('th');
           th.textContent = text;
           headerRow.appendChild(th);
@@ -146,8 +146,10 @@
 
       // 右側顯示「處方 ID」與「詳情」
       let rightContent = '';
-      prescription.plusday = `+++${prescription.plusday}天+++` || '無'; // Default to 0 if not present
-      rightContent += `<p><strong style="color: red;">特殊註記 :</strong> ${prescription.plusday}</p>`; // Added dayCount
+      if (prescription.plusday && prescription.plusday !== 0) {
+  const plusdayDisplay = `+++${prescription.plusday}天+++`;
+  rightContent += `<p><strong style="color: red;">特殊註記 :</strong> ${plusdayDisplay}</p>`;
+}
       rightContent += `<p><strong>處方 ID:</strong> ${prescription._id || 'N/A'}</p>`;
       if (prescription.details) rightContent += `<p><strong>詳情:</strong> ${prescription.details}</p>`;
       rightInfoBox.innerHTML = rightContent;
