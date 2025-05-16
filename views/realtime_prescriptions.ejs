@@ -112,16 +112,16 @@
       // 藥品表格
       if (prescription.medications && Array.isArray(prescription.medications) && prescription.medications.length > 0) {
         const table = document.createElement('table');
-        const thead = document.createElement('thead');
-        const tbody = document.createElement('tbody'        const headerRow = document.createElement(\'tr\');
-        [\'藥品名稱\', \'健保碼\', \'數量\', \'frequency\'].forEach(text => { // Added frequency to header       const th = document.createElement('th');
+        const thead = document.createElement('thead');        const tbody = document.createElement('tbody');
+
+        const headerRow = document.createElement('tr');
+        ['藥品名稱', '健保碼', '數量', 'frequency'].forEach(text => { // Added frequency to header
+          const th = document.createElement('th');
           th.textContent = text;
           headerRow.appendChild(th);
         });
         thead.appendChild(headerRow);
-        table.appendChild(thead);
-
-        prescription.medications.forEach(med => {
+        table.appendChild(thead);     prescription.medications.forEach(med => {
           const row = document.createElement('tr');
           const name = med.dname || 'N/A';
           const code = med.dinsuranceCode || 'N/A';
