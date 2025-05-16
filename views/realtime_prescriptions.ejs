@@ -146,8 +146,8 @@
 
       // 右側顯示「處方 ID」與「詳情」
       let rightContent = '';
-      prescription.dayCount = `+++${prescription.dayCount}天+++` || '無'; // Default to 0 if not present
-      rightContent += `<p><strong style="color: red;">特殊註記 :</strong> ${prescription.dayCount}</p>`; // Added dayCount
+      prescription.plusday = `+++${prescription.plusday}天+++` || '無'; // Default to 0 if not present
+      rightContent += `<p><strong style="color: red;">特殊註記 :</strong> ${prescription.plusday}</p>`; // Added dayCount
       rightContent += `<p><strong>處方 ID:</strong> ${prescription._id || 'N/A'}</p>`;
       if (prescription.details) rightContent += `<p><strong>詳情:</strong> ${prescription.details}</p>`;
       rightInfoBox.innerHTML = rightContent;
