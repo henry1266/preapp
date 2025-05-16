@@ -153,21 +153,30 @@
         const thead = document.createElement('thead');        const tbody = document.createElement('tbody');
 
         const headerRow = document.createElement('tr');
-        ['藥品名稱', '健保碼',  '頻率', '數量'].forEach(text => { // Added frequency to header
+        ['編號', '藥品名稱', '健保碼',  '頻率', '數量'].forEach(text => { // Added number and frequency to header
           const th = document.createElement('th');
           th.textContent = text;
           headerRow.appendChild(th);
         });
         thead.appendChild(headerRow);
-        table.appendChild(thead);     prescription.medications.forEach(med => {
+        table.appendChild(thead);     
+        
+        // 使用 forEach 並帶入索引，以便加入編號
+        prescription.medications.forEach((med, index) => {
           const row = document.createElement('tr');
+          const number = index + 1; // 從1開始的編號
           const name = med.dname || 'N/A';
           const code = med.dinsuranceCode || 'N/A';
           const frequency = med.frequency || 'N/A'; // Added frequency data
           const quantity = med.dcount || 0;
           
-
-          [name, code,  frequency , quantity].forEach(text => { // Added frequency to row data
+          // 檢查頻率是否為PRN，若是則將整行底色設為淺藍色
+          if (frequency === 'PRN') {
+            row.style.backgroundColor = '#e6f7ff'; // 淺藍色背景
+          }
+          
+          // 將編號加入資料陣列的第一個位置
+          [number, name, code, frequency, quantity].forEach(text => { // Added number and frequency to row data
             const td = document.createElement('td');
             td.textContent = text;
             row.appendChild(td);
