@@ -81,11 +81,50 @@
     </div>
   </div>
 
+  <!-- 引入html2canvas庫 -->
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
     const prescriptionDetailsContainer = document.getElementById('prescriptionDetailsContainer');
     const rightInfoBox = document.getElementById('rightInfoBox');
+    const leftColumn = document.getElementById('leftColumn');
+
+    // 自動將左側區域儲存為PNG的函數
+    function saveLeftColumnAsPNG(prescription) {
+      // 確保有處方資料才進行截圖
+      if (!prescription || Object.keys(prescription).length === 0) {
+        return;
+      }
+
+      // 使用setTimeout確保DOM已完全渲染
+      setTimeout(() => {
+        html2canvas(leftColumn, {
+          backgroundColor: '#fff',
+          scale: 2, // 提高解析度
+          logging: false,
+          useCORS: true
+        }).then(canvas => {
+          // 創建下載連結
+          const link = document.createElement('a');
+          // 使用處方ID和時間戳作為檔名
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+          const patientName = prescription.patientName || prescription.name || 'unknown';
+          const fileName = `處方_${patientName}_${timestamp}.png`;
+          
+          // 將canvas轉換為blob並下載
+          canvas.toBlob(function(blob) {
+            link.href = URL.createObjectURL(blob);
+            link.download = fileName;
+            link.click();
+            // 釋放URL物件
+            setTimeout(() => URL.revokeObjectURL(link.href), 5000);
+          }, 'image/png');
+        }).catch(err => {
+          console.error('截圖過程中發生錯誤:', err);
+        });
+      }, 500); // 等待500毫秒確保DOM已渲染完成
+    }
 
     function renderPrescription(prescription) {
       prescriptionDetailsContainer.innerHTML = '';
@@ -151,6 +190,9 @@
       rightContent += `<p><strong>處方 ID:</strong> ${prescription._id || 'N/A'}</p>`;
       if (prescription.details) rightContent += `<p><strong>詳情:</strong> ${prescription.details}</p>`;
       rightInfoBox.innerHTML = rightContent;
+
+      // 在渲染完成後自動儲存為PNG
+      saveLeftColumnAsPNG(prescription);
     }
 
     socket.on('connect', () => {
