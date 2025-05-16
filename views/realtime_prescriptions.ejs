@@ -161,8 +161,25 @@
         thead.appendChild(headerRow);
         table.appendChild(thead);     
         
-        // 使用 forEach 並帶入索引，以便加入編號
-        prescription.medications.forEach((med, index) => {
+        // 先對藥品進行排序，PRN排最下面，HS次之
+        const sortedMedications = [...prescription.medications].sort((a, b) => {
+          const freqA = a.frequency || 'N/A';
+          const freqB = b.frequency || 'N/A';
+          
+          // PRN 排最後
+          if (freqA === 'PRN' && freqB !== 'PRN') return 1;
+          if (freqA !== 'PRN' && freqB === 'PRN') return -1;
+          
+          // HS 排次後
+          if (freqA === 'HS' && freqB !== 'HS' && freqB !== 'PRN') return 1;
+          if (freqA !== 'HS' && freqA !== 'PRN' && freqB === 'HS') return -1;
+          
+          // 其他情況維持原順序
+          return 0;
+        });
+        
+        // 使用排序後的藥品陣列，並帶入索引，以便加入編號
+        sortedMedications.forEach((med, index) => {
           const row = document.createElement('tr');
           const number = index + 1; // 從1開始的編號
           const name = med.dname || 'N/A';
@@ -170,9 +187,11 @@
           const frequency = med.frequency || 'N/A'; // Added frequency data
           const quantity = med.dcount || 0;
           
-          // 檢查頻率是否為PRN，若是則將整行底色設為淺藍色
+          // 檢查頻率是否為PRN或HS，設定對應底色
           if (frequency === 'PRN') {
             row.style.backgroundColor = '#e6f7ff'; // 淺藍色背景
+          } else if (frequency === 'HS') {
+            row.style.backgroundColor = '#ffe6cc'; // 淺橘色背景
           }
           
           // 將編號加入資料陣列的第一個位置
