@@ -5,34 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/dashboard.css">
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
-        h1 { color: #0056b3; text-align: center; }
-        #prescriptionDetailsContainer {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-top: 20px;
-        }
-        .prescription-info p { margin: 8px 0; font-size: 1.1em; }
-        .prescription-info strong { color: #0056b3; }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: left;
-        }
-        th {
-            background-color: #e9ecef;
-            color: #495057;
-        }
-        .no-data { color: #777; text-align: center; font-size: 1.2em; padding: 20px; }
-    </style>
+<style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f4f4f4;
+      color: #333;
+    }
+    h1 {
+      color: #0056b3;
+      text-align: center;
+    }
+    .container {
+      display: flex;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    #leftColumn {
+      flex: 1;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    #rightColumn {
+      flex: 1;
+      background-color: #ffffff80;
+      padding: 20px;
+      border-radius: 8px;
+      border: 2px dashed #ccc;
+      text-align: center;
+      color: #999;
+    }
+    .prescription-info p {
+      margin: 8px 0;
+      font-size: 1.1em;
+    }
+    .prescription-info strong {
+      color: #0056b3;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #e9ecef;
+      color: #495057;
+    }
+    .no-data {
+      color: #777;
+      text-align: center;
+      font-size: 1.2em;
+      padding: 20px;
+    }
+  </style>
 </head>
 <body>
     <h1><%= title %></h1>
