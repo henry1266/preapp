@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+        h1 { color: #0056b3; }
+        #prescriptionsContainer {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-height: 500px; /* Added for better display of many items */
+            overflow-y: auto;  /* Added for scroll */
+        }
+        .prescription-item {
+            border-bottom: 1px solid #eee;
+            padding: 10px 0;
+        }
+        .prescription-item:last-child {
+            border-bottom: none;
+        }
+        .prescription-item p { margin: 5px 0; }
+        .no-data { color: #777; }
+    </style>
+</head>
+<body>
+    <h1><%= title %></h1>
+    <div id="prescriptionsContainer">
+        <!-- Prescription data will be dynamically inserted here -->
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const prescriptionsContainer = document.getElementById('prescriptionsContainer');
+        
+        let currentPrescriptions = <%- JSON.stringify(initialPrescriptions || []) %>;
+
+        function formatPrescriptionData(prescription) {
+            let medicationsDisplay = 'N/A';
+            if (prescription.medications) {
+                if (Array.isArray(prescription.medications)) {
+                    medicationsDisplay = prescription.medications.join(', ');
+                } else if (typeof prescription.medications === 'string') {
+                    try {
+                        const parsedMeds = JSON.parse(prescription.medications);
+                        if (Array.isArray(parsedMeds)) {
+                            medicationsDisplay = parsedMeds.join(', ');
+                        } else {
+                            medicationsDisplay = prescription.medications;
+                        }
+                    } catch (e) {
+                        medicationsDisplay = prescription.medications;
+                    }
+                } else {
+                     medicationsDisplay = String(prescription.medications);
+                }
+            }
+            
+            let content = `<p><strong>處方ID:</strong> ${prescription._id || 'N/A'}</p>`;
+            content += `<p><strong>病患姓名:</strong> ${prescription.patientName || prescription.name || 'N/A'}</p>`;
+            content += `<p><strong>藥品:</strong> ${medicationsDisplay}</p>`;
+            content += `<p><strong>日期:</strong> ${prescription.date ? new Date(prescription.date).toLocaleString() : new Date().toLocaleString()}</p>`;
+            if (prescription.details) content += `<p><strong>詳情:</strong> ${prescription.details}</p>`;
+            if (prescription.status) content += `<p><strong>狀態:</strong> ${prescription.status}</p>`;
+            return content;
+        }
+
+        function renderPrescriptions() {
+            prescriptionsContainer.innerHTML = '';
+            if (currentPrescriptions.length === 0) {
+                prescriptionsContainer.innerHTML = '<p class="no-data">等待處方資料更新...</p>';
+                return;
+            }
+
+            currentPrescriptions.forEach(prescription => {
+                const itemDiv = document.createElement('div');
+                itemDiv.classList.add('prescription-item');
+                itemDiv.innerHTML = formatPrescriptionData(prescription);
+                prescriptionsContainer.appendChild(itemDiv);
+            });
+        }
+
+        socket.on('connect', () => {
+            console.log('Connected to Socket.IO server!');
+        });
+
+        socket.on('initial_prescriptions', (initialData) => {
+            console.log('Received initial prescriptions:', initialData);
+            currentPrescriptions = initialData.concat(currentPrescriptions);
+            const uniquePrescriptions = [];
+            const ids = new Set();
+            currentPrescriptions.forEach(p => {
+                if (p && p._id && !ids.has(p._id)) {
+                    uniquePrescriptions.push(p);
+                    ids.add(p._id);
+                } else if (!p._id && p) {
+                    uniquePrescriptions.push(p);
+                }
+            });
+            currentPrescriptions = uniquePrescriptions.sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0));
+            renderPrescriptions();
+        });
+        
+        socket.on('prescription_update', (newPrescription) => {
+            console.log('Received prescription update:', newPrescription);
+            currentPrescriptions.unshift(newPrescription);
+            renderPrescriptions();
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from Socket.IO server.');
+        });
+
+        renderPrescriptions();
+    </script>
+</body>
+</html>
