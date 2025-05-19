@@ -429,6 +429,7 @@
 
       let content = '';
       content += `<p><strong>病患姓名:</strong> ${prescription.patientName || prescription.name || 'N/A'}`;
+      content += `<strong>   身分證字號:</strong> ${prescription.pid || 'N/A'}`;
       content += `<strong>   日期:</strong> ${prescription.date ? new Date(prescription.date).toLocaleString() : 'N/A'}</p>`;
       if (prescription.status) content += `<p><strong>狀態:</strong> ${prescription.status}</p>`;
       infoDiv.innerHTML = content;
