@@ -728,6 +728,12 @@
           const medicationCount = prescription.medications && Array.isArray(prescription.medications) ? prescription.medications.length : 0;
           prescriptionTitle.textContent = `處方 #${index + 1} ${formattedDate} (${medicationCount} 項藥品)`;
           
+          // 如果是第一筆處方（最新的），將標題文字變色
+          if (index === 0) {
+            prescriptionTitle.style.color = '#e74c3c'; // 紅色
+            prescriptionTitle.style.fontWeight = 'bold'; // 加粗
+          }
+          
           // 添加展開/收合圖標
           const toggleIcon = document.createElement('span');
           toggleIcon.classList.add('toggle-icon');
