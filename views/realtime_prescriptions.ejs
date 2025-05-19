@@ -723,10 +723,8 @@
           
           // 處方標題內容
           const prescriptionTitle = document.createElement('h4');
-          const prescriptionDate = prescription.date ? new Date(prescription.date) : new Date();
-          const formattedDate = prescriptionDate.getFullYear() +
-                               String(prescriptionDate.getMonth() + 1).padStart(2, '0') +
-                               String(prescriptionDate.getDate()).padStart(2, '0');
+          // 直接使用資料庫中的 predate 欄位作為處方日期
+          const formattedDate = prescription.predate || '';
           const medicationCount = prescription.medications && Array.isArray(prescription.medications) ? prescription.medications.length : 0;
           prescriptionTitle.textContent = `處方 #${index + 1} ${formattedDate} (${medicationCount} 項藥品)`;
           
