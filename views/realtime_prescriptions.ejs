@@ -688,6 +688,13 @@
       sortedDates.forEach(dateString => {
         const prescriptions = groupedByDate[dateString];
         
+        // 對同一日期的處方按時間排序（由新到舊）
+        prescriptions.sort((a, b) => {
+          const dateA = a.date ? new Date(a.date) : new Date();
+          const dateB = b.date ? new Date(b.date) : new Date();
+          return dateB - dateA; // 由新到舊排序
+        });
+        
         // 創建日期分組容器
         const dateGroup = document.createElement('div');
         dateGroup.classList.add('prescription-date-group');
@@ -716,7 +723,7 @@
           
           // 處方標題內容
           const prescriptionTitle = document.createElement('h4');
-          const prescriptionTime = prescription.date ? new Date(prescription.date).toLocaleTimeString() : '';
+          const prescriptionTime = prescription.date ? new Date(prescription.date).toLocaleTimeString('zh-TW', {hour: '2-digit', minute:'2-digit'}) : '';
           const medicationCount = prescription.medications && Array.isArray(prescription.medications) ? prescription.medications.length : 0;
           prescriptionTitle.textContent = `處方 #${index + 1} - ${prescriptionTime} (${medicationCount} 項藥品)`;
           
