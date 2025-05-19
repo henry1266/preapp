@@ -564,7 +564,7 @@
       prescriptionHistoryContent.innerHTML = '<p class="no-data">載入中，請稍候...</p>';
       
       // 使用 fetch API 獲取處方紀錄
-      fetch('/searchPrescriptions?pid=H101709751')
+      fetch('/searchPrescriptions?pid=' + id)
         .then(response => {
           if (!response.ok) {
             throw new Error('網路回應不正常');
