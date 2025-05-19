@@ -563,6 +563,15 @@
     function fetchPrescriptionHistory() {
       prescriptionHistoryContent.innerHTML = '<p class="no-data">載入中，請稍候...</p>';
       
+      // 提示用戶輸入病患ID
+      const id = prompt('請輸入病患ID', '');
+      
+      // 檢查ID是否為空
+      if (!id) {
+        prescriptionHistoryContent.innerHTML = '<p class="no-data">未輸入病患ID，無法查詢</p>';
+        return;
+      }
+      
       // 使用 fetch API 獲取處方紀錄
       fetch('/searchPrescriptions?pid=' + id)
         .then(response => {
