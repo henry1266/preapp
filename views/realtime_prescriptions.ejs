@@ -688,11 +688,12 @@
       sortedDates.forEach(dateString => {
         const prescriptions = groupedByDate[dateString];
         
-        // 對同一日期的處方按時間排序（由新到舊）
+        // 對同一日期的處方按 predate 數字排序（由大到小）
         prescriptions.sort((a, b) => {
-          const dateA = a.date ? new Date(a.date) : new Date();
-          const dateB = b.date ? new Date(b.date) : new Date();
-          return dateB - dateA; // 由新到舊排序
+          // 將 predate 轉為數字進行比較，若無 predate 則給予 0
+          const predateA = a.predate ? parseInt(a.predate, 10) : 0;
+          const predateB = b.predate ? parseInt(b.predate, 10) : 0;
+          return predateB - predateA; // 由大到小排序
         });
         
         // 創建日期分組容器
