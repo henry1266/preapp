@@ -723,9 +723,12 @@
           
           // 處方標題內容
           const prescriptionTitle = document.createElement('h4');
-          const prescriptionTime = prescription.date ? new Date(prescription.date).toLocaleTimeString('zh-TW', {hour: '2-digit', minute:'2-digit'}) : '';
+          const prescriptionDate = prescription.date ? new Date(prescription.date) : new Date();
+          const formattedDate = prescriptionDate.getFullYear() +
+                               String(prescriptionDate.getMonth() + 1).padStart(2, '0') +
+                               String(prescriptionDate.getDate()).padStart(2, '0');
           const medicationCount = prescription.medications && Array.isArray(prescription.medications) ? prescription.medications.length : 0;
-          prescriptionTitle.textContent = `處方 #${index + 1} - ${prescriptionTime} (${medicationCount} 項藥品)`;
+          prescriptionTitle.textContent = `處方 #${index + 1} ${formattedDate} (${medicationCount} 項藥品)`;
           
           // 添加展開/收合圖標
           const toggleIcon = document.createElement('span');
