@@ -260,6 +260,9 @@
     const cancelBtn = document.getElementById('cancelBtn');
     const modifyBtn = document.getElementById('modifyBtn');
     
+    // 全域變數，用於存儲當前顯示的處方資訊
+    let currentPrescription = null;
+    
     // 預加載音效
     const cancelSound = new Audio('/sounds/cancel_alert.mp3');
     const modifySound = new Audio('/sounds/modify_alert.mp3');
@@ -413,8 +416,12 @@
       if (!prescription || Object.keys(prescription).length === 0) {
         prescriptionDetailsContainer.innerHTML = '<p class="no-data">等待處方資料更新...</p>';
         rightInfoBox.innerHTML = '<p class="no-data">尚無處方資訊</p>';
+        currentPrescription = null;
         return;
       }
+      
+      // 更新當前處方資訊到全域變數
+      currentPrescription = prescription;
 
       // 左側基本資訊 + 藥品表格
       const infoDiv = document.createElement('div');
@@ -563,17 +570,22 @@
     function fetchPrescriptionHistory() {
       prescriptionHistoryContent.innerHTML = '<p class="no-data">載入中，請稍候...</p>';
       
-      // 提示用戶輸入病患ID
-      const id = prompt('請輸入病患ID', '');
+      // 檢查是否有當前顯示的處方資訊
+      if (!currentPrescription) {
+        prescriptionHistoryContent.innerHTML = '<p class="no-data">目前無病患資訊，無法查詢</p>';
+        return;
+      }
       
-      // 檢查ID是否為空
-      if (!id) {
-        prescriptionHistoryContent.innerHTML = '<p class="no-data">未輸入病患ID，無法查詢</p>';
+      // 從當前處方資訊中獲取病患ID
+      const patientId = currentPrescription.patientId || currentPrescription.pid;
+      
+      if (!patientId) {
+        prescriptionHistoryContent.innerHTML = '<p class="no-data">無法獲取病患ID，無法查詢</p>';
         return;
       }
       
       // 使用 fetch API 獲取處方紀錄
-      fetch('/searchPrescriptions?pid=' + id)
+      fetch('/searchPrescriptions?pid=' + patientId)
         .then(response => {
           if (!response.ok) {
             throw new Error('網路回應不正常');
