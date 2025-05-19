@@ -68,6 +68,12 @@
 <body>
   <h2><%= title %></h2>
 
+  <!-- 新增按鈕列 -->
+  <div class="button-container" style="text-align: center; margin: 10px 0;">
+    <button id="cancelBtn" style="background-color: #dc3545; color: white; border: none; padding: 8px 15px; margin-right: 10px; border-radius: 4px; cursor: pointer;">取消</button>
+    <button id="modifyBtn" style="background-color: #ffc107; color: black; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">改單</button>
+  </div>
+
   <div class="container">
     <div id="leftColumn">
       <div id="prescriptionDetailsContainer">
@@ -89,6 +95,37 @@
     const prescriptionDetailsContainer = document.getElementById('prescriptionDetailsContainer');
     const rightInfoBox = document.getElementById('rightInfoBox');
     const leftColumn = document.getElementById('leftColumn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const modifyBtn = document.getElementById('modifyBtn');
+    
+    // 按鈕點擊事件
+    cancelBtn.addEventListener('click', function() {
+      // 發送取消事件到伺服器
+      socket.emit('prescription_cancel');
+    });
+    
+    modifyBtn.addEventListener('click', function() {
+      // 發送改單事件到伺服器
+      socket.emit('prescription_modify');
+    });
+    
+    // 接收取消事件
+    socket.on('prescription_cancel_broadcast', function() {
+      // 將背景變為紅色
+      document.body.style.backgroundColor = '#ffcccc'; // 淺紅色背景
+    });
+    
+    // 接收改單事件
+    socket.on('prescription_modify_broadcast', function() {
+      // 將背景變為黃色
+      document.body.style.backgroundColor = '#ffffcc'; // 淺黃色背景
+    });
+    
+    // 接收重置事件
+    socket.on('prescription_reset_broadcast', function() {
+      // 恢復原始背景顏色
+      document.body.style.backgroundColor = '#f4f4f4';
+    });
 
     // 自動將左側區域儲存為PNG的函數
     function saveLeftColumnAsPNG(prescription) {

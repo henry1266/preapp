@@ -87,6 +87,8 @@ app.post('/api/notify-prescription-update', (req, res) => {
   console.log('Received new prescription via API:', newPrescription);
   // Emit the new prescription data to all connected clients
   io.emit('prescription_update', newPrescription);
+  // 同時發送重置背景顏色的廣播
+  io.emit('prescription_reset_broadcast');
   res.status(200).send({ message: 'Notification received and broadcasted' });
 });
 
@@ -137,19 +139,31 @@ app.post('/delete/:id', async (req, res) => {
 io.on('connection', (socket) => {
   console.log('A user connected to Socket.IO');
   // Optionally, send initial data upon connection if not handled by the EJS template server-side rendering
-  // async function sendInitialData() {
-  //   try {
-  //     await client.connect();
-  //     const db = client.db("pharmacy");
-  //     const prescriptions = await db.collection("prescriptions").find().sort({ date: -1 }).limit(10).toArray();
-  //     socket.emit('initial_prescriptions', prescriptions);
-  //   } catch (e) {
-  //     console.error("Error fetching initial prescriptions for socket:", e);
-  //   } finally {
-  //     // await client.close();
-  //   }
-  // }
-  // sendInitialData();
+  async function sendInitialData() {
+    try {
+      await client.connect();
+      const db = client.db("pharmacy");
+      const prescriptions = await db.collection("prescriptions").find().sort({ date: -1 }).limit(10).toArray();
+      socket.emit('initial_prescriptions', prescriptions);
+    } catch (e) {
+      console.error("Error fetching initial prescriptions for socket:", e);
+    }
+  }
+  sendInitialData();
+
+  // 處理「取消」按鈕事件
+  socket.on('prescription_cancel', () => {
+    console.log('處方取消事件觸發');
+    // 廣播給所有連線的客戶端
+    io.emit('prescription_cancel_broadcast');
+  });
+
+  // 處理「改單」按鈕事件
+  socket.on('prescription_modify', () => {
+    console.log('處方改單事件觸發');
+    // 廣播給所有連線的客戶端
+    io.emit('prescription_modify_broadcast');
+  });
 
   socket.on('disconnect', () => {
     console.log('User disconnected from Socket.IO');
