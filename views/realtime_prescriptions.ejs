@@ -73,6 +73,14 @@
       z-index: 100;
     }
     
+    /* 搜尋按鈕容器樣式 */
+    .search-button-container {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 100;
+    }
+    
     /* 按鈕基本樣式 */
     .action-btn {
       border: none;
@@ -95,6 +103,12 @@
       color: black;
     }
     
+    /* 搜尋按鈕樣式 */
+    #searchBtn {
+      background-color: #007bff;
+      color: white;
+    }
+    
     /* 閃爍動畫 */
     @keyframes flash {
       0% { opacity: 1; }
@@ -106,6 +120,71 @@
     
     .flash-animation {
       animation: flash 0.5s;
+    }
+    
+    /* 模態視窗樣式 */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+    }
+    
+    .modal-content {
+      background-color: #fefefe;
+      margin: 5% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      border-radius: 8px;
+      width: 80%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .modal-title {
+      font-size: 1.5rem;
+      color: #0056b3;
+      margin: 0;
+    }
+    
+    .close-modal {
+      color: #aaa;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    
+    .close-modal:hover,
+    .close-modal:focus {
+      color: #000;
+      text-decoration: none;
+    }
+    
+    .prescription-date-group {
+      margin-bottom: 20px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    
+    .prescription-date {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #0056b3;
+      margin-bottom: 10px;
     }
     
     /* 響應式設計 */
@@ -122,6 +201,11 @@
       .button-container {
         display: none;
       }
+      
+      .modal-content {
+        width: 95%;
+        margin: 10% auto;
+      }
     }
   </style>
 </head>
@@ -132,6 +216,24 @@
   <div class="button-container">
     <button id="cancelBtn" class="action-btn">取消</button>
     <button id="modifyBtn" class="action-btn">改單</button>
+  </div>
+  
+  <!-- 新增搜尋按鈕 - 左上角 -->
+  <div class="search-button-container">
+    <button id="searchBtn" class="action-btn">查詢病患處方紀錄</button>
+  </div>
+  
+  <!-- 處方紀錄模態視窗 -->
+  <div id="prescriptionHistoryModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">病患處方紀錄</h3>
+        <span class="close-modal">&times;</span>
+      </div>
+      <div id="prescriptionHistoryContent">
+        <p class="no-data">載入中，請稍候...</p>
+      </div>
+    </div>
   </div>
 
   <div class="container">
@@ -426,6 +528,165 @@
     socket.on('disconnect', () => {
       console.log('Disconnected from Socket.IO server.');
     });
+    
+    // 處方紀錄模態視窗相關功能
+    const searchBtn = document.getElementById('searchBtn');
+    const prescriptionHistoryModal = document.getElementById('prescriptionHistoryModal');
+    const closeModal = document.querySelector('.close-modal');
+    const prescriptionHistoryContent = document.getElementById('prescriptionHistoryContent');
+    
+    // 開啟模態視窗
+    searchBtn.addEventListener('click', function() {
+      // 顯示模態視窗
+      prescriptionHistoryModal.style.display = 'block';
+      
+      // 觸發按鈕特效
+      buttonEffect(searchBtn, '#007bff');
+      
+      // 載入處方紀錄
+      fetchPrescriptionHistory();
+    });
+    
+    // 關閉模態視窗
+    closeModal.addEventListener('click', function() {
+      prescriptionHistoryModal.style.display = 'none';
+    });
+    
+    // 點擊模態視窗外部關閉
+    window.addEventListener('click', function(event) {
+      if (event.target === prescriptionHistoryModal) {
+        prescriptionHistoryModal.style.display = 'none';
+      }
+    });
+    
+    // 獲取處方紀錄
+    function fetchPrescriptionHistory() {
+      prescriptionHistoryContent.innerHTML = '<p class="no-data">載入中，請稍候...</p>';
+      
+      // 使用 fetch API 獲取處方紀錄
+      fetch('/searchPrescriptions?pid=H101709751')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('網路回應不正常');
+          }
+          return response.json();
+        })
+        .then(data => {
+          renderPrescriptionHistory(data);
+        })
+        .catch(error => {
+          console.error('獲取處方紀錄時發生錯誤:', error);
+          prescriptionHistoryContent.innerHTML = `<p class="no-data">獲取處方紀錄失敗: ${error.message}</p>`;
+        });
+    }
+    
+    // 渲染處方紀錄
+    function renderPrescriptionHistory(data) {
+      // 檢查是否有資料
+      if (!data || data.length === 0) {
+        prescriptionHistoryContent.innerHTML = '<p class="no-data">無處方紀錄</p>';
+        return;
+      }
+      
+      // 清空內容區域
+      prescriptionHistoryContent.innerHTML = '';
+      
+      // 按日期分組並排序（由新到舊）
+      const groupedByDate = {};
+      
+      // 將資料按日期分組
+      data.forEach(prescription => {
+        // 取得日期（格式化為 YYYYMMDD）
+        const date = prescription.date ? new Date(prescription.date) : new Date();
+        const dateString = date.getFullYear() +
+                          String(date.getMonth() + 1).padStart(2, '0') +
+                          String(date.getDate()).padStart(2, '0');
+        
+        if (!groupedByDate[dateString]) {
+          groupedByDate[dateString] = [];
+        }
+        
+        groupedByDate[dateString].push(prescription);
+      });
+      
+      // 將日期排序（由新到舊）
+      const sortedDates = Object.keys(groupedByDate).sort((a, b) => b - a);
+      
+      // 為每個日期創建一個區塊
+      sortedDates.forEach(dateString => {
+        const prescriptions = groupedByDate[dateString];
+        
+        // 創建日期分組容器
+        const dateGroup = document.createElement('div');
+        dateGroup.classList.add('prescription-date-group');
+        
+        // 格式化日期顯示
+        const year = dateString.substring(0, 4);
+        const month = dateString.substring(4, 6);
+        const day = dateString.substring(6, 8);
+        const formattedDate = `就診日期 ${year}${month}${day}`;
+        
+        // 添加日期標題
+        const dateTitle = document.createElement('div');
+        dateTitle.classList.add('prescription-date');
+        dateTitle.textContent = formattedDate;
+        dateGroup.appendChild(dateTitle);
+        
+        // 創建藥品表格
+        const table = document.createElement('table');
+        
+        // 添加表頭
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        ['藥品名稱', '健保碼', '數量', '藥品總成本'].forEach(text => {
+          const th = document.createElement('th');
+          th.textContent = text;
+          headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+        
+        // 添加表格內容
+        const tbody = document.createElement('tbody');
+        
+        // 遍歷該日期的所有處方
+        prescriptions.forEach(prescription => {
+          // 檢查是否有藥品資料
+          if (prescription.medications && Array.isArray(prescription.medications)) {
+            prescription.medications.forEach(med => {
+              const row = document.createElement('tr');
+              
+              // 藥品名稱
+              const nameCell = document.createElement('td');
+              nameCell.textContent = med.dname || 'N/A';
+              row.appendChild(nameCell);
+              
+              // 健保碼
+              const codeCell = document.createElement('td');
+              codeCell.textContent = med.dinsuranceCode || 'N/A';
+              row.appendChild(codeCell);
+              
+              // 數量
+              const quantityCell = document.createElement('td');
+              quantityCell.textContent = med.dcount || '0';
+              row.appendChild(quantityCell);
+              
+              // 藥品總成本
+              const costCell = document.createElement('td');
+              const cost = med.cost || (med.price ? med.price * med.dcount : 0);
+              costCell.textContent = cost.toFixed(4);
+              row.appendChild(costCell);
+              
+              tbody.appendChild(row);
+            });
+          }
+        });
+        
+        table.appendChild(tbody);
+        dateGroup.appendChild(table);
+        prescriptionHistoryContent.appendChild(dateGroup);
+      });
+    }
   </script>
 </body>
 </html>
