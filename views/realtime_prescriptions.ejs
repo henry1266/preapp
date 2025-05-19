@@ -585,8 +585,8 @@
         return;
       }
       
-      // 使用 fetch API 獲取處方紀錄
-      fetch('/searchPrescriptions?pid=' + patientId)
+      // 使用 fetch API 獲取處方紀錄 - 使用新的 JSON API 端點
+      fetch('/searchPrescriptions/api/patient-prescriptions?pid=' + patientId)
         .then(response => {
           if (!response.ok) {
             throw new Error('網路回應不正常');
