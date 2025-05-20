@@ -47,17 +47,20 @@ function highlightErrorMedication(data) {
       // 設置錯誤底色
       row.style.backgroundColor = '#f8d7da';
       
-      // 創建註記框
-      const annotationBox = document.createElement('div');
-      annotationBox.className = 'error-annotation';
-      annotationBox.style.position = 'absolute';
-      annotationBox.style.backgroundColor = '#fff';
-      annotationBox.style.border = '2px solid #dc3545';
-      annotationBox.style.borderRadius = '4px';
-      annotationBox.style.padding = '5px 10px';
-      annotationBox.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
-      annotationBox.style.zIndex = '100';
-      annotationBox.style.maxWidth = '200px';
+      // 移除可能已存在的註記框
+      const existingAnnotation = document.querySelector('.error-annotation-cell');
+      if (existingAnnotation) {
+        existingAnnotation.remove();
+      }
+      
+      // 創建新的表格單元格來放置註記
+      const annotationCell = document.createElement('td');
+      annotationCell.className = 'error-annotation-cell';
+      annotationCell.style.backgroundColor = '#fff';
+      annotationCell.style.border = '2px solid #dc3545';
+      annotationCell.style.borderRadius = '4px';
+      annotationCell.style.padding = '5px 10px';
+      annotationCell.style.verticalAlign = 'middle';
       
       // 設置註記內容
       let errorSource = '未知來源';
@@ -67,30 +70,38 @@ function highlightErrorMedication(data) {
         errorSource = '藥局錯誤';
       }
       
-      annotationBox.innerHTML = `
+      annotationCell.innerHTML = `
         <strong>錯誤!</strong>
         <p>${errorSource}</p>
         <p>${data.resultText || ''}</p>
       `;
       
-      // 定位註記框
-      const rowRect = row.getBoundingClientRect();
-      annotationBox.style.top = `${rowRect.top}px`;
-      annotationBox.style.left = `${rowRect.right + 10}px`;
+      // 將註記單元格添加到行中
+      row.appendChild(annotationCell);
       
-      // 移除可能已存在的註記框
-      const existingAnnotation = document.querySelector('.error-annotation');
-      if (existingAnnotation) {
-        existingAnnotation.remove();
-      }
+      // 確保註記單元格可見
+      annotationCell.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       
-      // 添加到頁面
-      document.body.appendChild(annotationBox);
+      // 添加一個關閉按鈕
+      const closeButton = document.createElement('button');
+      closeButton.textContent = 'X';
+      closeButton.style.position = 'absolute';
+      closeButton.style.top = '2px';
+      closeButton.style.right = '2px';
+      closeButton.style.background = 'none';
+      closeButton.style.border = 'none';
+      closeButton.style.cursor = 'pointer';
+      closeButton.style.color = '#dc3545';
+      closeButton.style.fontWeight = 'bold';
       
-      // 5秒後移除註記框
-      setTimeout(() => {
-        annotationBox.remove();
-      }, 5000);
+      closeButton.addEventListener('click', function() {
+        annotationCell.remove();
+      });
+      
+      annotationCell.style.position = 'relative';
+      annotationCell.appendChild(closeButton);
+      
+      // 不再設置自動消失的計時器，讓註記框持續顯示
     }
   });
 }
