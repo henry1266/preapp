@@ -756,21 +756,13 @@
           // 創建處方標題
           const prescriptionTitle = document.createElement('h4');
           
-          // 格式化日期時間
-          console.log('處理處方日期:', prescription.date, prescription);
-          const date = prescription.date ? new Date(prescription.date) : new Date();
-          console.log('轉換後日期物件:', date);
-          const year = date.getFullYear();
-          const month = (date.getMonth() + 1).toString().padStart(2, '0');
-          const day = date.getDate().toString().padStart(2, '0');
-          const hours = date.getHours().toString().padStart(2, '0');
-          const minutes = date.getMinutes().toString().padStart(2, '0');
-          const prescriptionDate = `${year}/${month}/${day} ${hours}:${minutes}`;
-          console.log('格式化後日期:', prescriptionDate);
+          // 直接使用 predate 欄位
+          console.log('處方資料:', prescription);
+          console.log('處方 predate 值:', prescription.predate);
           
           // 計算藥品數量
           const medicationCount = prescription.medications && Array.isArray(prescription.medications) ? prescription.medications.length : 0;
-          prescriptionTitle.textContent = `處方 #${index + 1} ${prescriptionDate} (${medicationCount} 項藥品)`;
+          prescriptionTitle.textContent = `處方 #${index + 1} ${prescription.predate || 'N/A'} (${medicationCount} 項藥品)`;
           
           // 如果是第一筆處方（最新的），將標題文字變色
           if (index === 0) {
