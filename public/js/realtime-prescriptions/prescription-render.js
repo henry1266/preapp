@@ -103,12 +103,12 @@ function renderPrescription(prescription) {
           patientId: prescription.pid || 'N/A'
         };
         
-        // 發送選取藥品事件到伺服器
+        // 發送選取藥品事件到伺服器，讓所有連線主機都能收到廣播
         socket.emit('medication_review_request', medicationData);
         console.log('已發送藥品覆核請求:', medicationData);
         
-        // 直接顯示本地對話框，不等待廣播
-        showReviewModal(medicationData);
+        // 移除直接顯示本地對話框的行為，改為統一由廣播事件觸發
+        // 這樣所有連線主機都會同步顯示對話框
       });
       
       selectTd.appendChild(selectBtn);
