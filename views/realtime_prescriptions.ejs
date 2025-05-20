@@ -758,9 +758,12 @@
           
           // 格式化日期時間
           const date = prescription.date ? new Date(prescription.date) : new Date();
+          const year = date.getFullYear();
+          const month = (date.getMonth() + 1).toString().padStart(2, '0');
+          const day = date.getDate().toString().padStart(2, '0');
           const hours = date.getHours().toString().padStart(2, '0');
           const minutes = date.getMinutes().toString().padStart(2, '0');
-          const formattedDate = `${date}`;
+          const formattedDate = `${year}/${month}/${day} ${hours}:${minutes}`;
           
           // 計算藥品數量
           const medicationCount = prescription.medications && Array.isArray(prescription.medications) ? prescription.medications.length : 0;
