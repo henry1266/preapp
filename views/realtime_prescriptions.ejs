@@ -717,7 +717,13 @@
           selectBtn.style.cursor = 'pointer';
           
           // 添加選取按鈕點擊事件
-          selectBtn.addEventListener('click', function() {
+          selectBtn.addEventListener('click', function(event) {
+            // 防止事件冒泡
+            event.preventDefault();
+            event.stopPropagation();
+            
+            console.log('選取按鈕被點擊');
+            
             const medicationData = {
               id: med._id || '',
               name: med.dname || 'N/A',
@@ -732,6 +738,9 @@
             // 發送選取藥品事件到伺服器
             socket.emit('medication_review_request', medicationData);
             console.log('已發送藥品覆核請求:', medicationData);
+            
+            // 直接顯示本地對話框，不等待廣播
+            showReviewModal(medicationData);
           });
           
           selectTd.appendChild(selectBtn);
