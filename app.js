@@ -164,10 +164,24 @@ io.on('connection', (socket) => {
     // 廣播給所有連線的客戶端
     io.emit('prescription_modify_broadcast');
   });
-
+  
+  // 處理藥品覆核請求
+  socket.on('medication_review_request', (data) => {
+    console.log('收到藥品覆核請求:', data);
+    // 廣播給所有連線的客戶端
+    io.emit('medication_review_broadcast', data);
+  });
+  
+  // 處理覆核結果
+  socket.on('review_result', (data) => {
+    console.log('收到覆核結果:', data);
+    // 廣播給所有連線的客戶端
+    io.emit('review_result_broadcast', data);
+  });
+  
   socket.on('disconnect', () => {
     console.log('User disconnected from Socket.IO');
-  });
+  });;
 });
 
 // Start server
