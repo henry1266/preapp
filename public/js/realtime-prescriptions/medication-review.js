@@ -25,6 +25,9 @@ socket.on('review_result_broadcast', function(data) {
   } else {
     // 錯誤 - 紅色背景
     document.body.style.backgroundColor = '#f8d7da';
+    
+    // 找到對應的藥品行並標記為錯誤
+    highlightErrorMedication(data);
   }
   
   // 3秒後恢復原始背景顏色
@@ -32,6 +35,65 @@ socket.on('review_result_broadcast', function(data) {
     document.body.style.backgroundColor = '#f4f4f4';
   }, 3000);
 });
+
+// 標記錯誤藥品並顯示註記框
+function highlightErrorMedication(data) {
+  // 尋找所有藥品行
+  const medicationRows = document.querySelectorAll('tr[data-medication-id]');
+  
+  // 遍歷所有藥品行，找到匹配的ID
+  medicationRows.forEach(row => {
+    if (row.dataset.medicationId === data.id) {
+      // 設置錯誤底色
+      row.style.backgroundColor = '#f8d7da';
+      
+      // 創建註記框
+      const annotationBox = document.createElement('div');
+      annotationBox.className = 'error-annotation';
+      annotationBox.style.position = 'absolute';
+      annotationBox.style.backgroundColor = '#fff';
+      annotationBox.style.border = '2px solid #dc3545';
+      annotationBox.style.borderRadius = '4px';
+      annotationBox.style.padding = '5px 10px';
+      annotationBox.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+      annotationBox.style.zIndex = '100';
+      annotationBox.style.maxWidth = '200px';
+      
+      // 設置註記內容
+      let errorSource = '未知來源';
+      if (data.result === 'incorrect_clinic') {
+        errorSource = '診所錯誤';
+      } else if (data.result === 'incorrect_pharmacy') {
+        errorSource = '藥局錯誤';
+      }
+      
+      annotationBox.innerHTML = `
+        <strong>錯誤!</strong>
+        <p>${errorSource}</p>
+        <p>${data.resultText || ''}</p>
+      `;
+      
+      // 定位註記框
+      const rowRect = row.getBoundingClientRect();
+      annotationBox.style.top = `${rowRect.top}px`;
+      annotationBox.style.left = `${rowRect.right + 10}px`;
+      
+      // 移除可能已存在的註記框
+      const existingAnnotation = document.querySelector('.error-annotation');
+      if (existingAnnotation) {
+        existingAnnotation.remove();
+      }
+      
+      // 添加到頁面
+      document.body.appendChild(annotationBox);
+      
+      // 5秒後移除註記框
+      setTimeout(() => {
+        annotationBox.remove();
+      }, 5000);
+    }
+  });
+}
 
 // 顯示覆核對話框
 function showReviewModal(data) {
