@@ -741,7 +741,7 @@
         const dateTitle = document.createElement('div');
         dateTitle.classList.add('prescription-date');
         dateTitle.textContent = formattedDate;
-        dateGroup.appendChild(dateTitle);
+        //dateGroup.appendChild(dateTitle);
         
         // 為每個處方創建一個項目
         prescriptions.forEach((prescription, index) => {
@@ -760,7 +760,7 @@
           const date = prescription.date ? new Date(prescription.date) : new Date();
           const hours = date.getHours().toString().padStart(2, '0');
           const minutes = date.getMinutes().toString().padStart(2, '0');
-          const formattedDate = `${hours}:${minutes}`;
+          const formattedDate = `${date}`;
           
           // 計算藥品數量
           const medicationCount = prescription.medications && Array.isArray(prescription.medications) ? prescription.medications.length : 0;
