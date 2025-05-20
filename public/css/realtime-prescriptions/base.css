@@ -1,0 +1,65 @@
+/* 基本樣式 */
+body {
+  font-family: Arial, sans-serif;
+  margin: 5px;
+  background-color: #f4f4f4;
+  color: #333;
+  position: relative;
+}
+
+h2 {
+  color: #0056b3;
+  text-align: center;
+}
+
+.container {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+#leftColumn {
+  flex: 1;
+  background-color: #fff;
+  padding: 4px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#rightColumn {
+  flex: 1;
+  background-color: #ffffff80;
+  padding: 4px;
+  border-radius: 8px;
+  border: 4px dashed #ccc;
+  color: #333;
+}
+
+.prescription-info p {
+  margin: 4px 0;
+  font-size: 1rem;
+}
+
+.prescription-info strong {
+  color: #0056b3;
+}
+
+.no-data {
+  color: #777;
+  text-align: center;
+  font-size: 1rem;
+  padding: 4px;
+}
+
+/* 閃爍動畫 */
+@keyframes flash {
+  0% { opacity: 1; }
+  25% { opacity: 0.5; }
+  50% { opacity: 1; }
+  75% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.flash-animation {
+  animation: flash 0.5s;
+}

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/dashboard.css" />
+  <link rel="stylesheet" href="/css/realtime-prescriptions/base.css" />
+  <link rel="stylesheet" href="/css/realtime-prescriptions/table.css" />
+  <link rel="stylesheet" href="/css/realtime-prescriptions/buttons.css" />
+  <link rel="stylesheet" href="/css/realtime-prescriptions/modals.css" />
+  <link rel="stylesheet" href="/css/realtime-prescriptions/prescription-history.css" />
+</head>
+<body>
+  <h2><%= title %></h2>
+
+  <!-- 引入按鈕控制區 -->
+  <%- include('partials/control-buttons') %>
+  
+  <!-- 引入處方紀錄模態視窗 -->
+  <%- include('partials/prescription-history-modal') %>
+  
+  <!-- 引入藥品覆核對話框 -->
+  <%- include('partials/medication-review-modal') %>
+
+  <!-- 引入主要內容區域 -->
+  <%- include('partials/content-container') %>
+
+  <!-- 引入html2canvas庫 -->
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/realtime-prescriptions/socket-connection.js"></script>
+  <script src="/js/realtime-prescriptions/prescription-render.js"></script>
+  <script src="/js/realtime-prescriptions/button-effects.js"></script>
+  <script src="/js/realtime-prescriptions/prescription-history.js"></script>
+  <script src="/js/realtime-prescriptions/medication-review.js"></script>
+</body>
+</html>

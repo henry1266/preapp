@@ -1,0 +1,107 @@
+/* 按鈕樣式 */
+/* 按鈕容器樣式 */
+.button-container {
+  position: absolute;
+  top: 2px;
+  right: 10px;
+  z-index: 100;
+}
+
+/* 搜尋按鈕容器樣式 */
+.search-button-container {
+  position: absolute;
+  top: 2px;
+  left: 10px;
+  z-index: 100;
+}
+
+/* 按鈕基本樣式 */
+.action-btn {
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 10px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+/* 取消按鈕樣式 */
+#cancelBtn {
+  background-color: #dc3545;
+  color: white;
+}
+
+/* 改單按鈕樣式 */
+#modifyBtn {
+  background-color: #ffc107;
+  color: black;
+}
+
+/* 搜尋按鈕樣式 */
+#searchBtn {
+  background-color: #007bff;
+  color: white;
+}
+
+/* 禁用按鈕樣式 */
+.action-btn:disabled {
+  background-color: #cccccc;
+  color: #666666;
+  cursor: not-allowed;
+}
+
+/* 覆核按鈕樣式 */
+.review-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.review-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.review-btn-correct {
+  background-color: #5cb85c;
+  color: white;
+}
+
+.review-btn-incorrect-clinic {
+  background-color: #d9534f;
+  color: white;
+}
+
+.review-btn-incorrect-pharmacy {
+  background-color: #f0ad4e;
+  color: white;
+}
+
+.review-btn:hover {
+  opacity: 0.9;
+}
+
+/* 響應式設計 */
+@media screen and (min-width: 1024px) {
+  /* 大螢幕 */
+  .action-btn {
+    padding: 12px 20px;
+    font-size: 1.2rem;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  /* 小螢幕 */
+  .button-container {
+    display: none;
+  }
+  
+  .review-buttons {
+    flex-direction: column;
+    gap: 10px;
+  }
+}

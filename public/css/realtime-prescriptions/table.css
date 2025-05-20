@@ -1,0 +1,31 @@
+/* 表格樣式 */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 4px;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 4px;
+  text-align: left;
+}
+
+th {
+  background-color: #e9ecef;
+  color: #495057;
+}
+
+/* 藥品選取按鈕樣式 */
+.select-medication-btn {
+  padding: 4px 8px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.select-medication-btn:hover {
+  background-color: #45a049;
+}
