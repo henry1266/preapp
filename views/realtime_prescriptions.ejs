@@ -109,6 +109,13 @@
       color: white;
     }
     
+    /* 禁用按鈕樣式 */
+    .action-btn:disabled {
+      background-color: #cccccc;
+      color: #666666;
+      cursor: not-allowed;
+    }
+    
     /* 閃爍動畫 */
     @keyframes flash {
       0% { opacity: 1; }
@@ -309,6 +316,7 @@
     const leftColumn = document.getElementById('leftColumn');
     const cancelBtn = document.getElementById('cancelBtn');
     const modifyBtn = document.getElementById('modifyBtn');
+    const searchBtn = document.getElementById('searchBtn');
     
     // 全域變數，用於存儲當前顯示的處方資訊
     let currentPrescription = null;
@@ -561,6 +569,9 @@
 
       // 在渲染完成後自動儲存為PNG
       saveLeftColumnAsPNG(prescription);
+      
+      // 處方丟入時自動執行查詢紀錄功能
+      fetchPrescriptionHistory();
     }
 
     socket.on('connect', () => {
@@ -588,7 +599,6 @@
     });
     
     // 處方紀錄模態視窗相關功能
-    const searchBtn = document.getElementById('searchBtn');
     const prescriptionHistoryModal = document.getElementById('prescriptionHistoryModal');
     const closeModal = document.querySelector('.close-modal');
     const prescriptionHistoryContent = document.getElementById('prescriptionHistoryContent');
@@ -645,11 +655,32 @@
         })
         .then(data => {
           renderPrescriptionHistory(data);
+          
+          // 根據處方數量調整按鈕標題與狀態
+          updateSearchButtonState(data);
         })
         .catch(error => {
           console.error('獲取處方紀錄時發生錯誤:', error);
           prescriptionHistoryContent.innerHTML = `<p class="no-data">獲取處方紀錄失敗: ${error.message}</p>`;
         });
+    }
+    
+    // 根據處方數量更新查詢按鈕狀態
+    function updateSearchButtonState(data) {
+      if (!data || data.length === 0) {
+        // 無處方紀錄，不應該發生，保持原樣
+        return;
+      }
+      
+      if (data.length === 1) {
+        // 僅有一張處方，將按鈕標題改為「初診」並反灰禁用
+        searchBtn.textContent = '初診';
+        searchBtn.disabled = true;
+      } else {
+        // 大於一筆處方，維持原樣
+        searchBtn.textContent = '查詢紀錄';
+        searchBtn.disabled = false;
+      }
     }
     
     // 渲染處方紀錄
@@ -704,28 +735,34 @@
         const year = dateString.substring(0, 4);
         const month = dateString.substring(4, 6);
         const day = dateString.substring(6, 8);
-        const formattedDate = `就診日期 ${year}/${month}/${day}`;
+        const formattedDate = `${year}年${month}月${day}日`;
         
         // 添加日期標題
         const dateTitle = document.createElement('div');
         dateTitle.classList.add('prescription-date');
-        dateTitle.textContent = "12345";
-        //dateGroup.appendChild(dateTitle);
+        dateTitle.textContent = formattedDate;
+        dateGroup.appendChild(dateTitle);
         
-        // 遍歷該日期的所有處方
+        // 為每個處方創建一個項目
         prescriptions.forEach((prescription, index) => {
           // 創建處方項目容器
           const prescriptionItem = document.createElement('div');
           prescriptionItem.classList.add('prescription-item');
           
-          // 創建處方標題
+          // 創建處方標題容器
           const prescriptionHeader = document.createElement('div');
           prescriptionHeader.classList.add('prescription-header');
           
-          // 處方標題內容
+          // 創建處方標題
           const prescriptionTitle = document.createElement('h4');
-          // 直接使用資料庫中的 predate 欄位作為處方日期
-          const formattedDate = prescription.predate || '';
+          
+          // 格式化日期時間
+          const date = prescription.date ? new Date(prescription.date) : new Date();
+          const hours = date.getHours().toString().padStart(2, '0');
+          const minutes = date.getMinutes().toString().padStart(2, '0');
+          const formattedDate = `${hours}:${minutes}`;
+          
+          // 計算藥品數量
           const medicationCount = prescription.medications && Array.isArray(prescription.medications) ? prescription.medications.length : 0;
           prescriptionTitle.textContent = `處方 #${index + 1} ${formattedDate} (${medicationCount} 項藥品)`;
           
