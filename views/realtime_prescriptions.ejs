@@ -373,6 +373,9 @@
 </head>
 <body>
   <h2><%= title %></h2>
+  
+  <!-- 新增藥物選擇顯示區域 -->
+  <div id="medicationSelectionInfo" style="text-align: center; margin: 10px 0; padding: 8px; display: none; border-radius: 4px; font-weight: bold;"></div>
 
   <!-- 新增按鈕列 - 移至右上角 -->
   <div class="button-container">
@@ -567,6 +570,9 @@
     socket.on('medication_review_broadcast', function(data) {
       console.log('收到藥品覆核請求廣播:', data);
       showReviewModal(data);
+      
+      // 在標題下方顯示選擇的藥物資訊
+      displayMedicationSelection(data);
     });
     
     // 接收覆核結果廣播
@@ -578,9 +584,13 @@
       if (data.result === 'correct') {
         // 正確 - 綠色背景
         document.body.style.backgroundColor = '#d4edda';
+        // 更新選擇顯示區域的顏色和內容
+        updateMedicationSelectionStatus(data, 'correct');
       } else {
         // 錯誤 - 紅色背景
         document.body.style.backgroundColor = '#f8d7da';
+        // 更新選擇顯示區域的顏色和內容
+        updateMedicationSelectionStatus(data, 'incorrect');
       }
       
       // 3秒後恢復原始背景顏色
@@ -628,6 +638,9 @@
     function renderPrescription(prescription) {
       prescriptionDetailsContainer.innerHTML = '';
       rightInfoBox.innerHTML = '';
+
+      // 清空藥物選擇顯示區域
+      clearMedicationSelection();
 
       if (!prescription || Object.keys(prescription).length === 0) {
         prescriptionDetailsContainer.innerHTML = '<p class="no-data">等待處方資料更新...</p>';
@@ -1082,6 +1095,63 @@
         // 添加日期分組到內容區域
         prescriptionHistoryContent.appendChild(dateGroup);
       });
+    }
+    
+    // 顯示藥物選擇資訊在標題下方
+    function displayMedicationSelection(data) {
+      const medicationSelectionInfo = document.getElementById('medicationSelectionInfo');
+      if (!medicationSelectionInfo) return;
+      
+      // 設置顯示內容
+      medicationSelectionInfo.innerHTML = `
+        <span>已選取藥品: ${data.name || 'N/A'} (${data.code || 'N/A'}) - ${data.frequency || 'N/A'} - ${data.quantity || '0'}</span>
+      `;
+      
+      // 設置背景顏色為淺藍色，表示等待覆核
+      medicationSelectionInfo.style.backgroundColor = '#cce5ff';
+      medicationSelectionInfo.style.color = '#004085';
+      medicationSelectionInfo.style.border = '1px solid #b8daff';
+      
+      // 顯示選擇區域
+      medicationSelectionInfo.style.display = 'block';
+    }
+    
+    // 更新藥物選擇狀態
+    function updateMedicationSelectionStatus(data, status) {
+      const medicationSelectionInfo = document.getElementById('medicationSelectionInfo');
+      if (!medicationSelectionInfo) return;
+      
+      let statusText = '';
+      
+      // 根據狀態設置不同的顏色和文字
+      if (status === 'correct') {
+        // 正確 - 綠色
+        medicationSelectionInfo.style.backgroundColor = '#d4edda';
+        medicationSelectionInfo.style.color = '#155724';
+        medicationSelectionInfo.style.border = '1px solid #c3e6cb';
+        statusText = '✓ 正確';
+      } else {
+        // 錯誤 - 紅色
+        medicationSelectionInfo.style.backgroundColor = '#f8d7da';
+        medicationSelectionInfo.style.color = '#721c24';
+        medicationSelectionInfo.style.border = '1px solid #f5c6cb';
+        statusText = data.resultText || '✗ 錯誤';
+      }
+      
+      // 更新顯示內容，加入狀態文字
+      medicationSelectionInfo.innerHTML = `
+        <span>已選取藥品: ${data.name || 'N/A'} (${data.code || 'N/A'}) - ${data.frequency || 'N/A'} - ${data.quantity || '0'} [${statusText}]</span>
+      `;
+    }
+    
+    // 清空藥物選擇顯示
+    function clearMedicationSelection() {
+      const medicationSelectionInfo = document.getElementById('medicationSelectionInfo');
+      if (!medicationSelectionInfo) return;
+      
+      // 清空內容並隱藏
+      medicationSelectionInfo.innerHTML = '';
+      medicationSelectionInfo.style.display = 'none';
     }
     
     // 顯示覆核對話框
