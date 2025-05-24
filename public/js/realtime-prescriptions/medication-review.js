@@ -7,8 +7,10 @@ const reviewCorrectBtn = document.getElementById('reviewCorrectBtn');
 const reviewIncorrectClinicBtn = document.getElementById('reviewIncorrectClinicBtn');
 const reviewIncorrectPharmacyBtn = document.getElementById('reviewIncorrectPharmacyBtn');
 
-// 藥品選取音效
+// 藥品選取音效 - 修改為與改單按鈕一致的預加載方式
 const selectSound = new Audio('/sounds/selection/select_alert.mp3');
+// 預先加載音效，確保瀏覽器已經準備好音效資源
+selectSound.load();
 
 // 接收藥品覆核請求廣播
 socket.on('medication_review_broadcast', function(data) {
@@ -126,11 +128,41 @@ function showReviewModal(data) {
     </div>
   `;
   
-  // 播放選取音效
-  selectSound.currentTime = 0; // 重置音效播放位置，避免重複觸發時無法播放
-  selectSound.play().catch(error => {
-    console.error('播放選取音效失敗:', error);
-  });
+  // 播放選取音效 - 修改播放方式，確保在用戶互動後播放
+  try {
+    // 重置音效播放位置，避免重複觸發時無法播放
+    selectSound.currentTime = 0;
+    // 使用 Promise 處理播放
+    const playPromise = selectSound.play();
+    
+    if (playPromise !== undefined) {
+      playPromise.then(_ => {
+        // 播放成功
+        console.log('選取音效播放成功');
+      }).catch(error => {
+        // 播放失敗，嘗試在用戶互動後再次播放
+        console.error('播放選取音效失敗:', error);
+        
+        // 在用戶點擊對話框按鈕時播放音效
+        const playOnInteraction = function() {
+          selectSound.currentTime = 0;
+          selectSound.play().catch(e => console.error('互動後播放仍失敗:', e));
+          
+          // 移除事件監聽器，避免重複播放
+          reviewCorrectBtn.removeEventListener('click', playOnInteraction);
+          reviewIncorrectClinicBtn.removeEventListener('click', playOnInteraction);
+          reviewIncorrectPharmacyBtn.removeEventListener('click', playOnInteraction);
+        };
+        
+        // 為對話框按鈕添加一次性事件監聽器
+        reviewCorrectBtn.addEventListener('click', playOnInteraction);
+        reviewIncorrectClinicBtn.addEventListener('click', playOnInteraction);
+        reviewIncorrectPharmacyBtn.addEventListener('click', playOnInteraction);
+      });
+    }
+  } catch (error) {
+    console.error('播放選取音效時發生異常:', error);
+  }
   
   // 顯示對話框
   reviewModal.style.display = 'block';
@@ -195,4 +227,24 @@ reviewIncorrectPharmacyBtn.addEventListener('click', function() {
     socket.emit('review_result', resultData);
     console.log('已發送覆核結果:', resultData);
   }
+});
+
+// 在頁面加載完成後，嘗試預先播放一次音效（靜音），以解決某些瀏覽器的自動播放限制
+document.addEventListener('DOMContentLoaded', function() {
+  // 暫時靜音
+  const originalVolume = selectSound.volume;
+  selectSound.volume = 0;
+  
+  // 嘗試播放
+  selectSound.play().then(() => {
+    // 播放成功後立即暫停並恢復音量
+    selectSound.pause();
+    selectSound.currentTime = 0;
+    selectSound.volume = originalVolume;
+    console.log('預加載音效成功');
+  }).catch(error => {
+    // 恢復音量但不做其他處理，等待用戶互動
+    selectSound.volume = originalVolume;
+    console.log('預加載音效需要用戶互動:', error);
+  });
 });
