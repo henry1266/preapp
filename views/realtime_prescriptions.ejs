@@ -456,9 +456,18 @@
     let currentPrescription = null;
     let currentReviewData = null;
     
-    // 預加載音效
+    // 預加載音效 - 將選取藥品音效也加入全域預加載
     const cancelSound = new Audio('/sounds/cancel_alert.mp3');
     const modifySound = new Audio('/sounds/modify_alert.mp3');
+    const selectSound = new Audio('/sounds/selection/select_alert.mp3');
+    
+    // 確保音效已加載
+    cancelSound.load();
+    modifySound.load();
+    selectSound.load();
+    
+    // 將選取音效掛載到window物件，使其在其他JS檔案中可用
+    window.selectSound = selectSound;
     
     // 閃爍動畫函數 - 增強版
     function flashScreen(color) {
@@ -597,6 +606,100 @@
       setTimeout(() => {
         document.body.style.backgroundColor = '#f4f4f4';
       }, 3000);
+    });
+
+    // 顯示覆核對話框
+    function showReviewModal(data) {
+      // 儲存當前覆核資料
+      currentReviewData = data;
+      
+      // 設置覆核資訊
+      reviewMedicationInfo.innerHTML = `
+        <div class="review-item">
+          <p><strong>病患:</strong> ${data.patientName || 'N/A'}</p>
+          <p><strong>身分證字號:</strong> ${data.patientId || 'N/A'}</p>
+          <p><strong>藥品名稱:</strong> ${data.name || 'N/A'}</p>
+          <p><strong>健保碼:</strong> ${data.code || 'N/A'}</p>
+          <p><strong>頻率:</strong> ${data.frequency || 'N/A'}</p>
+          <p><strong>數量:</strong> ${data.quantity || '0'}</p>
+        </div>
+      `;
+      
+      // 播放選取音效 - 直接使用全域音效物件
+      try {
+        // 重置音效播放位置
+        selectSound.currentTime = 0;
+        // 播放音效
+        selectSound.play().catch(error => {
+          console.error('播放選取音效失敗:', error);
+        });
+      } catch (error) {
+        console.error('播放選取音效時發生異常:', error);
+      }
+      
+      // 顯示對話框
+      reviewModal.style.display = 'block';
+    }
+
+    // 隱藏覆核對話框
+    function hideReviewModal() {
+      reviewModal.style.display = 'none';
+      currentReviewData = null;
+    }
+
+    // 關閉覆核對話框
+    closeReviewModal.addEventListener('click', function() {
+      hideReviewModal();
+    });
+
+    // 點擊覆核對話框外部關閉
+    window.addEventListener('click', function(event) {
+      if (event.target === reviewModal) {
+        hideReviewModal();
+      }
+    });
+
+    // 覆核結果按鈕事件
+    reviewCorrectBtn.addEventListener('click', function() {
+      if (currentReviewData) {
+        const resultData = {
+          ...currentReviewData,
+          result: 'correct',
+          resultText: '正確'
+        };
+        
+        // 發送覆核結果到伺服器
+        socket.emit('review_result', resultData);
+        console.log('已發送覆核結果:', resultData);
+      }
+    });
+
+    reviewIncorrectClinicBtn.addEventListener('click', function() {
+      if (currentReviewData) {
+        const resultData = {
+          ...currentReviewData,
+          result: 'incorrect_clinic',
+          resultText: '錯誤(診所修改)'
+        };
+        
+        // 發送覆核結果到伺服器
+        socket.emit('review_result', resultData);
+        console.log('已發送覆核結果:', resultData);
+      }
+    });
+
+    reviewIncorrectPharmacyBtn.addEventListener('click', function() {
+      if (currentReviewData) {
+        const resultData = {
+          ...currentReviewData,
+          result: 'incorrect_pharmacy',
+          resultText: '錯誤(藥局修改)'
+        };
+        
+        // 發送覆核結果到伺服器
+        socket.emit('review_result', resultData);
+        console.log('已發送覆核結果:', resultData);
+      }
     });
 
     // 自動將左側區域儲存為PNG的函數
@@ -960,7 +1063,7 @@
         const dateTitle = document.createElement('div');
         dateTitle.classList.add('prescription-date');
         dateTitle.textContent = formattedDate;
-        //dateGroup.appendChild(dateTitle);
+        dateGroup.appendChild(dateTitle);
         
         // 為每個處方創建一個項目
         prescriptions.forEach((prescription, index) => {
@@ -976,20 +1079,10 @@
           const prescriptionTitle = document.createElement('h4');
           
           // 直接使用 predate 欄位
-          console.log('處方資料:', prescription);
-          console.log('處方 predate 值:', prescription.predate);
+          const predateText = prescription.predate ? `第 ${prescription.predate} 次處方` : '首次處方';
+          prescriptionTitle.textContent = `${predateText} - ${prescription.patientName || prescription.name || 'N/A'}`;
           
-          // 計算藥品數量
-          const medicationCount = prescription.medications && Array.isArray(prescription.medications) ? prescription.medications.length : 0;
-          prescriptionTitle.textContent = `處方 #${index + 1} ${prescription.predate || 'N/A'} (${medicationCount} 項藥品)`;
-          
-          // 如果是第一筆處方（最新的），將標題文字變色
-          if (index === 0) {
-            prescriptionTitle.style.color = '#e74c3c'; // 紅色
-            prescriptionTitle.style.fontWeight = 'bold'; // 加粗
-          }
-          
-          // 添加展開/收合圖標
+          // 創建切換圖標
           const toggleIcon = document.createElement('span');
           toggleIcon.classList.add('toggle-icon');
           toggleIcon.innerHTML = '&#9660;'; // 向下箭頭
@@ -1003,238 +1096,134 @@
           prescriptionContent.classList.add('prescription-content');
           
           // 添加處方詳細資訊
-          if (prescription._id) {
-            const prescriptionInfo = document.createElement('p');
-            prescriptionInfo.innerHTML = `<strong>處方 ID:</strong> ${prescription._id}`;
-            if (prescription.details) {
-              prescriptionInfo.innerHTML += `<br><strong>詳情:</strong> ${prescription.details}`;
-            }
-            prescriptionContent.appendChild(prescriptionInfo);
+          let contentHTML = '';
+          contentHTML += `<p><strong>處方 ID:</strong> ${prescription._id || 'N/A'}</p>`;
+          contentHTML += `<p><strong>病患姓名:</strong> ${prescription.patientName || prescription.name || 'N/A'}</p>`;
+          contentHTML += `<p><strong>身分證字號:</strong> ${prescription.pid || 'N/A'}</p>`;
+          contentHTML += `<p><strong>日期:</strong> ${prescription.date ? new Date(prescription.date).toLocaleString() : 'N/A'}</p>`;
+          
+          // 添加藥品資訊
+          if (prescription.medications && Array.isArray(prescription.medications) && prescription.medications.length > 0) {
+            contentHTML += '<h4>藥品列表:</h4>';
+            contentHTML += '<table style="width:100%; border-collapse: collapse;">';
+            contentHTML += '<thead><tr><th>藥品名稱</th><th>健保碼</th><th>頻率</th><th>數量</th></tr></thead>';
+            contentHTML += '<tbody>';
+            
+            prescription.medications.forEach(med => {
+              contentHTML += '<tr>';
+              contentHTML += `<td>${med.dname || 'N/A'}</td>`;
+              contentHTML += `<td>${med.dinsuranceCode || 'N/A'}</td>`;
+              contentHTML += `<td>${med.frequency || 'N/A'}</td>`;
+              contentHTML += `<td>${med.dcount || '0'}</td>`;
+              contentHTML += '</tr>';
+            });
+            
+            contentHTML += '</tbody></table>';
+          } else {
+            contentHTML += '<p>無藥品資訊。</p>';
           }
           
-          // 檢查是否有藥品資料
-          if (prescription.medications && Array.isArray(prescription.medications) && prescription.medications.length > 0) {
-            // 創建藥品表格
-            const table = document.createElement('table');
-            table.style.width = '100%';
-            
-            // 添加表頭
-            const thead = document.createElement('thead');
-            const headerRow = document.createElement('tr');
-            ['藥品名稱', '健保碼', '頻率', '數量', '單價', '總成本'].forEach(text => {
-              const th = document.createElement('th');
-              th.textContent = text;
-              headerRow.appendChild(th);
-            });
-            thead.appendChild(headerRow);
-            table.appendChild(thead);
-            
-            // 添加表格內容
-            const tbody = document.createElement('tbody');
-            
-            // 遍歷藥品
-            prescription.medications.forEach(med => {
-              const row = document.createElement('tr');
-              
-              // 藥品名稱
-              const nameCell = document.createElement('td');
-              nameCell.textContent = med.dname || 'N/A';
-              row.appendChild(nameCell);
-              
-              // 健保碼
-              const codeCell = document.createElement('td');
-              codeCell.textContent = med.dinsuranceCode || 'N/A';
-              row.appendChild(codeCell);
-              
-              // 頻率
-              const freqCell = document.createElement('td');
-              freqCell.textContent = med.frequency || 'N/A';
-              row.appendChild(freqCell);
-              
-              // 數量
-              const quantityCell = document.createElement('td');
-              quantityCell.textContent = med.dcount || '0';
-              row.appendChild(quantityCell);
-              
-              // 單價
-              const priceCell = document.createElement('td');
-              priceCell.textContent = (med.unitPrice || 0).toFixed(2);
-              row.appendChild(priceCell);
-              
-              // 藥品總成本
-              const costCell = document.createElement('td');
-              const cost = med.totalCost || (med.unitPrice ? med.unitPrice * med.dcount : 0);
-              costCell.textContent = cost.toFixed(2);
-              row.appendChild(costCell);
-              
-              tbody.appendChild(row);
-            });
-            
-            table.appendChild(tbody);
-            prescriptionContent.appendChild(table);
-          } else {
-            const noMedsP = document.createElement('p');
-            noMedsP.textContent = '無藥品資訊';
-            prescriptionContent.appendChild(noMedsP);
-          }
+          prescriptionContent.innerHTML = contentHTML;
           
           // 將標題和內容添加到處方項目
           prescriptionItem.appendChild(prescriptionHeader);
           prescriptionItem.appendChild(prescriptionContent);
           
-          // 添加點擊事件處理
+          // 添加點擊事件以切換顯示/隱藏內容
           prescriptionHeader.addEventListener('click', function() {
             prescriptionContent.classList.toggle('active');
             toggleIcon.classList.toggle('active');
           });
           
-          // 添加處方項目到日期分組
+          // 將處方項目添加到日期分組
           dateGroup.appendChild(prescriptionItem);
         });
         
-        // 添加日期分組到內容區域
+        // 將日期分組添加到內容區域
         prescriptionHistoryContent.appendChild(dateGroup);
       });
     }
     
-    // 顯示藥物選擇資訊在標題下方
+    // 藥物選擇顯示區域相關功能
+    const medicationSelectionInfo = document.getElementById('medicationSelectionInfo');
+    
+    // 顯示選擇的藥物資訊
     function displayMedicationSelection(data) {
-      const medicationSelectionInfo = document.getElementById('medicationSelectionInfo');
-      if (!medicationSelectionInfo) return;
-      
-      // 設置顯示內容
-      medicationSelectionInfo.innerHTML = `
-        <span>已選取藥品: ${data.name || 'N/A'} (${data.code || 'N/A'}) - ${data.frequency || 'N/A'} - ${data.quantity || '0'}</span>
-      `;
-      
-      // 設置背景顏色為淺藍色，表示等待覆核
-      medicationSelectionInfo.style.backgroundColor = '#cce5ff';
-      medicationSelectionInfo.style.color = '#004085';
-      medicationSelectionInfo.style.border = '1px solid #b8daff';
-      
-      // 顯示選擇區域
       medicationSelectionInfo.style.display = 'block';
+      medicationSelectionInfo.style.backgroundColor = '#f0f8ff'; // 淺藍色背景
+      medicationSelectionInfo.innerHTML = `
+        <span>已選取藥品: ${data.name || 'N/A'} (${data.code || 'N/A'}) - 等待覆核中...</span>
+      `;
     }
     
     // 更新藥物選擇狀態
     function updateMedicationSelectionStatus(data, status) {
-      const medicationSelectionInfo = document.getElementById('medicationSelectionInfo');
-      if (!medicationSelectionInfo) return;
-      
-      let statusText = '';
-      
-      // 根據狀態設置不同的顏色和文字
       if (status === 'correct') {
-        // 正確 - 綠色
-        medicationSelectionInfo.style.backgroundColor = '#d4edda';
-        medicationSelectionInfo.style.color = '#155724';
-        medicationSelectionInfo.style.border = '1px solid #c3e6cb';
-        statusText = '✓ 正確';
+        medicationSelectionInfo.style.backgroundColor = '#d4edda'; // 綠色背景
+        medicationSelectionInfo.innerHTML = `
+          <span>藥品: ${data.name || 'N/A'} (${data.code || 'N/A'}) - 覆核結果: <strong style="color: green;">正確</strong></span>
+        `;
       } else {
-        // 錯誤 - 紅色
-        medicationSelectionInfo.style.backgroundColor = '#f8d7da';
-        medicationSelectionInfo.style.color = '#721c24';
-        medicationSelectionInfo.style.border = '1px solid #f5c6cb';
-        statusText = data.resultText || '✗ 錯誤';
+        medicationSelectionInfo.style.backgroundColor = '#f8d7da'; // 紅色背景
+        medicationSelectionInfo.innerHTML = `
+          <span>藥品: ${data.name || 'N/A'} (${data.code || 'N/A'}) - 覆核結果: <strong style="color: red;">錯誤</strong></span>
+        `;
       }
       
-      // 更新顯示內容，加入狀態文字
-      medicationSelectionInfo.innerHTML = `
-        <span>已選取藥品: ${data.name || 'N/A'} (${data.code || 'N/A'}) - ${data.frequency || 'N/A'} - ${data.quantity || '0'} [${statusText}]</span>
-      `;
+      // 3秒後隱藏選擇資訊
+      setTimeout(() => {
+        medicationSelectionInfo.style.display = 'none';
+      }, 3000);
     }
     
-    // 清空藥物選擇顯示
+    // 清空藥物選擇顯示區域
     function clearMedicationSelection() {
-      const medicationSelectionInfo = document.getElementById('medicationSelectionInfo');
-      if (!medicationSelectionInfo) return;
-      
-      // 清空內容並隱藏
-      medicationSelectionInfo.innerHTML = '';
       medicationSelectionInfo.style.display = 'none';
+      medicationSelectionInfo.innerHTML = '';
     }
     
-    // 顯示覆核對話框
-    function showReviewModal(data) {
-      // 儲存當前覆核資料
-      currentReviewData = data;
+    // 在頁面加載完成後，嘗試預先播放一次所有音效（靜音），以解決某些瀏覽器的自動播放限制
+    document.addEventListener('DOMContentLoaded', function() {
+      // 暫時靜音所有音效
+      const originalCancelVolume = cancelSound.volume;
+      const originalModifyVolume = modifySound.volume;
+      const originalSelectVolume = selectSound.volume;
       
-      // 設置覆核資訊
-      reviewMedicationInfo.innerHTML = `
-        <div class="review-item">
-          <p><strong>病患:</strong> ${data.patientName || 'N/A'}</p>
-          <p><strong>身分證字號:</strong> ${data.patientId || 'N/A'}</p>
-          <p><strong>藥品名稱:</strong> ${data.name || 'N/A'}</p>
-          <p><strong>健保碼:</strong> ${data.code || 'N/A'}</p>
-          <p><strong>頻率:</strong> ${data.frequency || 'N/A'}</p>
-          <p><strong>數量:</strong> ${data.quantity || '0'}</p>
-        </div>
-      `;
+      cancelSound.volume = 0;
+      modifySound.volume = 0;
+      selectSound.volume = 0;
       
-      // 顯示對話框
-      reviewModal.style.display = 'block';
-    }
-    
-    // 隱藏覆核對話框
-    function hideReviewModal() {
-      reviewModal.style.display = 'none';
-      currentReviewData = null;
-    }
-    
-    // 關閉覆核對話框
-    closeReviewModal.addEventListener('click', function() {
-      hideReviewModal();
-    });
-    
-    // 點擊覆核對話框外部關閉
-    window.addEventListener('click', function(event) {
-      if (event.target === reviewModal) {
-        hideReviewModal();
-      }
-    });
-    
-    // 覆核結果按鈕事件
-    reviewCorrectBtn.addEventListener('click', function() {
-      if (currentReviewData) {
-        const resultData = {
-          ...currentReviewData,
-          result: 'correct',
-          resultText: '正確'
-        };
+      // 嘗試播放所有音效
+      Promise.all([
+        cancelSound.play().then(() => {
+          cancelSound.pause();
+          cancelSound.currentTime = 0;
+          console.log('預加載取消音效成功');
+        }).catch(e => console.log('預加載取消音效需要用戶互動:', e)),
         
-        // 發送覆核結果到伺服器
-        socket.emit('review_result', resultData);
-        console.log('已發送覆核結果:', resultData);
-      }
-    });
-    
-    reviewIncorrectClinicBtn.addEventListener('click', function() {
-      if (currentReviewData) {
-        const resultData = {
-          ...currentReviewData,
-          result: 'incorrect_clinic',
-          resultText: '錯誤(診所修改)'
-        };
+        modifySound.play().then(() => {
+          modifySound.pause();
+          modifySound.currentTime = 0;
+          console.log('預加載改單音效成功');
+        }).catch(e => console.log('預加載改單音效需要用戶互動:', e)),
         
-        // 發送覆核結果到伺服器
-        socket.emit('review_result', resultData);
-        console.log('已發送覆核結果:', resultData);
-      }
-    });
-    
-    reviewIncorrectPharmacyBtn.addEventListener('click', function() {
-      if (currentReviewData) {
-        const resultData = {
-          ...currentReviewData,
-          result: 'incorrect_pharmacy',
-          resultText: '錯誤(藥局修改)'
-        };
-        
-        // 發送覆核結果到伺服器
-        socket.emit('review_result', resultData);
-        console.log('已發送覆核結果:', resultData);
-      }
+        selectSound.play().then(() => {
+          selectSound.pause();
+          selectSound.currentTime = 0;
+          console.log('預加載選取音效成功');
+        }).catch(e => console.log('預加載選取音效需要用戶互動:', e))
+      ]).finally(() => {
+        // 恢復所有音效的原始音量
+        cancelSound.volume = originalCancelVolume;
+        modifySound.volume = originalModifyVolume;
+        selectSound.volume = originalSelectVolume;
+      });
     });
   </script>
+  
+  <!-- 引入其他JS檔案 -->
+  <script src="/js/realtime-prescriptions/prescription-render.js"></script>
+  <script src="/js/realtime-prescriptions/prescription-history.js"></script>
+  <script src="/js/realtime-prescriptions/socket-connection.js"></script>
 </body>
 </html>
