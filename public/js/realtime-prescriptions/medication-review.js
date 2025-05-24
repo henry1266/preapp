@@ -7,6 +7,9 @@ const reviewCorrectBtn = document.getElementById('reviewCorrectBtn');
 const reviewIncorrectClinicBtn = document.getElementById('reviewIncorrectClinicBtn');
 const reviewIncorrectPharmacyBtn = document.getElementById('reviewIncorrectPharmacyBtn');
 
+// 藥品選取音效
+const selectSound = new Audio('/sounds/selection/select_alert.mp3');
+
 // 接收藥品覆核請求廣播
 socket.on('medication_review_broadcast', function(data) {
   console.log('收到藥品覆核請求廣播:', data);
@@ -122,6 +125,12 @@ function showReviewModal(data) {
       <p><strong>數量:</strong> ${data.quantity || '0'}</p>
     </div>
   `;
+  
+  // 播放選取音效
+  selectSound.currentTime = 0; // 重置音效播放位置，避免重複觸發時無法播放
+  selectSound.play().catch(error => {
+    console.error('播放選取音效失敗:', error);
+  });
   
   // 顯示對話框
   reviewModal.style.display = 'block';
